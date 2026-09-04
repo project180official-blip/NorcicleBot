@@ -238,23 +238,68 @@ def sync_from_sheets(force=False):
                 }
             )
         stock_rows = fetch_csv(config.STOCK_URL)
+        if stock_rows:
+            # Cek jika baris 1 adalah header tergabung (misal: 'STOCK_ID S0001', 'PRODUCT_ID P0001')
+            first_s_id = next((k for k in stock_rows[0].keys() if k and k.strip().upper().startswith("STOCK_ID") or (k and k.strip().upper().startswith("STOCK"))), None)
+            if first_s_id and len(first_s_id.split(None, 1)) > 1:
+                h_sid = first_s_id.split(None, 1)[1].strip()
+                h_pid = next((k.split(None, 1)[1].strip() for k in stock_rows[0].keys() if k and (k.strip().upper().startswith("PRODUCT_ID") or k.strip().upper().startswith("PRODUCT")) and len(k.split(None, 1)) > 1), "")
+                h_content = next((k.split(None, 1)[1].strip() for k in stock_rows[0].keys() if k and k.strip().upper().startswith("CONTENT") and len(k.split(None, 1)) > 1), "")
+                h_status = next((k.split(None, 1)[1].strip() for k in stock_rows[0].keys() if k and k.strip().upper().startswith("STATUS") and len(k.split(None, 1)) > 1), "AVAILABLE")
+                h_sold_to = next((k.split(None, 1)[1].strip() for k in stock_rows[0].keys() if k and k.strip().upper().startswith("SOLD_TO") and len(k.split(None, 1)) > 1), "")
+                db.upsert_stock_row({
+                    "stock_id": h_sid,
+                    "product_id": h_pid,
+                    "content": h_content,
+                    "status": h_status.upper(),
+                    "sold_to": h_sold_to,
+                })
+
         for row in stock_rows:
-            if not row.get("STOCK_ID"):
+            raw_sid = row.get("STOCK_ID")
+            raw_pid = row.get("PRODUCT_ID")
+            raw_content = row.get("CONTENT") or ""
+            raw_status = row.get("STATUS") or "AVAILABLE"
+            raw_sold_to = row.get("SOLD_TO") or ""
+
+            for k, v in row.items():
+                if not k:
+                    continue
+                ku = k.strip().upper()
+                if (ku.startswith("STOCK_ID") or ku.startswith("STOCK")) and not raw_sid:
+                    raw_sid = v
+                elif (ku.startswith("PRODUCT_ID") or ku.startswith("PRODUCT")) and not raw_pid:
+                    raw_pid = v
+                elif ku.startswith("CONTENT") and not raw_content:
+                    raw_content = v
+                elif ku.startswith("STATUS") and raw_status == "AVAILABLE":
+                    raw_status = v or "AVAILABLE"
+                elif ku.startswith("SOLD_TO") and not raw_sold_to:
+                    raw_sold_to = v
+
+            if not raw_sid:
                 continue
+
             db.upsert_stock_row(
                 {
-                    "stock_id": str(row["STOCK_ID"]).strip(),
-                    "product_id": str(row.get("PRODUCT_ID", "")).strip(),
-                    "content": row.get("CONTENT", ""),
-                    "status": str(row.get("STATUS", "")).strip().upper(),
-                    "sold_to": row.get("SOLD_TO", ""),
+                    "stock_id": str(raw_sid).strip(),
+                    "product_id": str(raw_pid or "").strip(),
+                    "content": str(raw_content or ""),
+                    "status": str(raw_status or "").strip().upper(),
+                    "sold_to": str(raw_sold_to or ""),
                 }
             )
-        kept = {
-            str(row["STOCK_ID"]).strip()
-            for row in stock_rows
-            if row.get("STOCK_ID")
-        }
+        
+        kept = set()
+        if stock_rows:
+            first_s_id = next((k for k in stock_rows[0].keys() if k and (k.strip().upper().startswith("STOCK_ID") or k.strip().upper().startswith("STOCK"))), None)
+            if first_s_id and len(first_s_id.split(None, 1)) > 1:
+                kept.add(first_s_id.split(None, 1)[1].strip())
+        for row in stock_rows:
+            for k, v in row.items():
+                if k and (k.strip().upper().startswith("STOCK_ID") or k.strip().upper().startswith("STOCK")) and v:
+                    kept.add(str(v).strip())
+                    break
         available = db.count_all_available()
         if kept and available > max(10, len(kept) * 2):
             logger.warning(

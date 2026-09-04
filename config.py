@@ -7,10 +7,10 @@ load_dotenv()
 TOKEN = os.environ.get("TOKEN", "").strip()
 
 SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID", "").strip()
-PRODUCTS_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=PRODUCTS"
-STOCK_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=STOCK"
-SETTINGS_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=SETTINGS"
-ORDERS_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=ORDERS"
+PRODUCTS_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=PRODUCTS&headers=1"
+STOCK_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=STOCK&headers=1"
+SETTINGS_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=SETTINGS&headers=1"
+ORDERS_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=ORDERS&headers=1"
 
 PAYMENT_METHOD = os.environ.get("PAYMENT_METHOD", "crypto").strip().lower()
 
