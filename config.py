@@ -23,6 +23,8 @@ NEVAPEDIA_API_KEY = os.environ.get("NEVAPEDIA_API_KEY", "").strip()
 
 QRIS_IMAGE_URL = os.environ.get("QRIS_IMAGE_URL", "").strip()
 
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Norcicle").strip().lstrip("@")
+
 _admin_raw = os.environ.get("ADMIN_CHAT_ID", "").strip()
 try:
     ADMIN_CHAT_ID = int(_admin_raw) if _admin_raw else None

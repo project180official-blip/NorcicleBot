@@ -260,7 +260,7 @@ function setupSheets() {
     shSet.appendRow(['KEY', 'VALUE']);
     shSet.appendRow(['STORE_NAME', 'Norcicle Shop']);
     shSet.appendRow(['BOT_USERNAME', 'NorcicleBot']);
-    shSet.appendRow(['ADMIN_USERNAME', 'saldihere']);
+    shSet.appendRow(['ADMIN_USERNAME', 'Norcicle']);
     shSet.appendRow(['CURRENCY', 'USD']);
   }
 

@@ -243,7 +243,7 @@ def orders_page(user_id):
 
 
 def contact_page():
-    admin = db.get_setting("ADMIN_USERNAME", "admin")
+    admin = db.get_setting("ADMIN_USERNAME", config.ADMIN_USERNAME) or config.ADMIN_USERNAME
     text = (
         f"{header('Customer Support')}\n\n"
         f"Need assistance or have any questions?\n"
