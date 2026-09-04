@@ -5,7 +5,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CopyTextButton
 import config
 import db
 
-BRAND = "NORCICLE SHOP"
+BRAND = "NORCICLE TERMINAL"
 
 
 def esc(s):
@@ -13,10 +13,13 @@ def esc(s):
 
 
 def header(title=None):
-    lines = [f"✦ <b>{BRAND}</b> ✦", "Your Digital Destination"]
+    lines = [
+        f"⚡ <code>[ {BRAND} // v2.0 ]</code>",
+        "<code>─── [● SYSTEM ONLINE] ───</code>"
+    ]
     if title:
         lines.append("")
-        lines.append(title)
+        lines.append(f"◈ <b>{title}</b>")
     return "\n".join(lines)
 
 
@@ -34,15 +37,15 @@ def force_join_page():
     channel = config.CHANNEL_USERNAME
     channel_link = f"https://t.me/{channel.lstrip('@')}"
     text = (
-        f"{header()}\n\n"
-        f"Before you start shopping, please <b>join our channel</b> first!\n\n"
-        f"📢 Channel: {channel}\n\n"
-        f"Click the button below to join, then click <b>✅ Joined</b>."
+        f"{header('AUTHENTICATION REQUIRED')}\n\n"
+        f"<code>ACCESS GATE:</code> Channel membership required.\n\n"
+        f"🛰️ <b>Network Node:</b> <code>{channel}</code>\n\n"
+        f"Connect to the network node below and click <b>[ VERIFY ACCESS ]</b>."
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("📢 Join Channel", url=channel_link)],
-            [InlineKeyboardButton("✅ Joined", callback_data="checkjoin")],
+            [InlineKeyboardButton("🛰️ Connect Node", url=channel_link)],
+            [InlineKeyboardButton("⚡ [ VERIFY ACCESS ]", callback_data="checkjoin")],
         ]
     )
     return text, keyboard
@@ -50,46 +53,48 @@ def force_join_page():
 
 def product_line(p):
     avail = db.count_available(p["id"])
-    ready = f"🟢 {avail} ready" if avail > 0 else "⏳ sold out"
+    status = f"<code>[● {avail} READY]</code>" if avail > 0 else "<code>[○ SOLD OUT]</code>"
     return (
-        f"{p['emoji']} <b>{esc(p['name'])}</b>\n"
-        f"   {fmt_price(p['price'])} · {ready}"
+        f"<code>┌─</code> {p['emoji']} <b>{esc(p['name'])}</b>\n"
+        f"<code>└─▸</code> <b>{fmt_price(p['price'])}</b>  {status}"
     )
 
 
 def home_text(user_name=None):
     products = db.get_active_products()
-    greeting = f"👋 Hello, <b>{esc(user_name)}</b>!" if user_name else "👋 Hello!"
+    user_tag = f"<code>{esc(user_name)}</code>" if user_name else "<code>ANONYMOUS</code>"
 
     blocks = []
     for i, p in enumerate(products, 1):
         avail = db.count_available(p["id"])
-        ready = f"🟢 {avail} ready" if avail > 0 else "⏳ sold out"
+        status = f"<code>[● {avail} IN STOCK]</code>" if avail > 0 else "<code>[○ SOLD OUT]</code>"
         blocks.append(
-            f"<b>{i}.</b> {esc(p['name'])}\n"
-            f"   {fmt_price(p['price'])} · {ready}"
+            f"<code>[{i:02d}]</code> {p['emoji']} <b>{esc(p['name'])}</b>\n"
+            f"      <code>PRICE :</code> <b>{fmt_price(p['price'])}</b>\n"
+            f"      <code>STATUS:</code> {status}"
         )
-    hot_section = "\n\n".join(blocks) if blocks else "No products available at the moment."
+    feed = "\n\n".join(blocks) if blocks else "<code>[ NO ACTIVE FEEDS DETECTED ]</code>"
 
     text = (
-        f"{greeting}\n"
-        f"What digital product are you looking for today?\n"
-        f"🔥 Featured Products:\n\n"
-        f"{hot_section}\n\n"
-        f"Type the <b>number</b> or tap buttons below 👇"
+        f"⚡ <code>[ {BRAND} // TERMINAL ]</code>\n"
+        f"<code>USER // {user_tag}</code>\n"
+        f"<code>STATUS // AUTHENTICATED [●]</code>\n\n"
+        f"<code>─── [ LIVE CATALOG FEED ] ───</code>\n\n"
+        f"{feed}\n\n"
+        f"<code>─── [ SELECT COMMAND ] ───</code>"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🛍️ Shop Now", callback_data="catalog")],
+            [InlineKeyboardButton("⚡ [ EXECUTE ORDER ]", callback_data="catalog")],
             [
-                InlineKeyboardButton("🔥 Offers", callback_data="promo"),
-                InlineKeyboardButton("📦 Check Stock", callback_data="stock"),
+                InlineKeyboardButton("🔥 Hot Offers", callback_data="promo"),
+                InlineKeyboardButton("📦 Live Vault", callback_data="stock"),
             ],
             [
-                InlineKeyboardButton("🤝 Affiliate", callback_data="affiliate"),
-                InlineKeyboardButton("🎧 Support", callback_data="contact"),
+                InlineKeyboardButton("🤝 Affiliate Node", callback_data="affiliate"),
+                InlineKeyboardButton("🛰️ Support Desk", callback_data="contact"),
             ],
-            [InlineKeyboardButton("↻ Refresh", callback_data="refresh")],
+            [InlineKeyboardButton("↻ Sync Feed", callback_data="refresh")],
         ]
     )
     return text, keyboard
@@ -98,21 +103,19 @@ def home_text(user_name=None):
 def promo_page():
     products = sorted(db.get_active_products(), key=lambda p: p["price"])
     if not products:
-        text = f"{header('<b>🔥 Offers</b>')}\n\nNo active offers available."
+        text = f"{header('SPECIAL DEALS')}\n\n<code>[ NO ACTIVE PROMOTIONS ]</code>"
         keyboard = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("⌂ Home", callback_data="home")]]
+            [[InlineKeyboardButton("« Return Terminal", callback_data="home")]]
         )
         return text, keyboard
-    parts = [header("<b>🔥 Special Offers</b>")]
-    blocks = []
-    for p in products:
-        blocks.append(product_line(p))
+    parts = [header("PROMO DEALS // HIGH PRIORITY")]
+    blocks = [product_line(p) for p in products]
     parts.append("\n\n".join(blocks))
-    text = "\n\n".join(parts) + "\n\nLimited stock available, shop now!"
+    text = "\n\n".join(parts) + "\n\n<code>⚡ Limited allocation available. Execute below:</code>"
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🛍️ Shop Now", callback_data="catalog")],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("⚡ [ EXECUTE ORDER ]", callback_data="catalog")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -121,32 +124,32 @@ def promo_page():
 def catalog_text():
     products = db.get_active_products()
     if not products:
-        text = f"{header('<b>🛍️ Catalog</b>')}\n\nNo products available at the moment."
+        text = f"{header('PRODUCT CATALOG')}\n\n<code>[ NO PRODUCTS LOADED ]</code>"
         keyboard = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("⌂ Home", callback_data="home")]]
+            [[InlineKeyboardButton("« Return Terminal", callback_data="home")]]
         )
         return text, keyboard
 
-    parts = [header("<b>🛍️ Select Product</b>")]
+    parts = [header("SELECT PRODUCT ITEM")]
     blocks = []
     for i, p in enumerate(products, 1):
         avail = db.count_available(p["id"])
-        ready = f"🟢 {avail} ready" if avail > 0 else "⏳ sold out"
+        status = f"<code>[● {avail} READY]</code>" if avail > 0 else "<code>[○ SOLD]</code>"
         blocks.append(
-            f"<b>{i}.</b> {esc(p['name'])}\n"
-            f"   {fmt_price(p['price'])} · {ready}"
+            f"<code>[{i:02d}]</code> {p['emoji']} <b>{esc(p['name'])}</b>\n"
+            f"      <code>PRICE:</code> <b>{fmt_price(p['price'])}</b>  {status}"
         )
     parts.append("\n\n".join(blocks))
-    text = "\n\n".join(parts) + "\n\nType the <b>number</b> or tap buttons below 👇"
+    text = "\n\n".join(parts) + "\n\n<code>Select target product below:</code>"
 
     rows = [
-        [InlineKeyboardButton(f"{p['emoji']} {esc(p['name'])}", callback_data=f"product:{p['id']}")]
+        [InlineKeyboardButton(f"⚡ {p['emoji']} {esc(p['name'])}", callback_data=f"product:{p['id']}")]
         for p in products
     ]
     rows.append(
         [
-            InlineKeyboardButton("📦 Check Stock", callback_data="stock"),
-            InlineKeyboardButton("⌂ Home", callback_data="home"),
+            InlineKeyboardButton("📦 Live Vault", callback_data="stock"),
+            InlineKeyboardButton("« Return Terminal", callback_data="home"),
         ]
     )
     return text, InlineKeyboardMarkup(rows)
@@ -157,37 +160,39 @@ def product_page(product, qty):
     total = product["price"] * qty
     sold_out = avail < 1
 
+    status_tag = f"<code>[● {avail} UNITS READY]</code>" if avail > 0 else "<code>[○ OUT OF STOCK]</code>"
+
     text = (
-        f"💎 <b>{esc(product['name'])}</b>\n\n"
-        f"{esc(product['description'])}\n\n"
-        f"💰 <b>{fmt_price(product['price'])}</b>\n"
-        f"{'🟢 In Stock' if avail > 0 else '⏳ Sold Out'} · {avail} items\n\n"
-        f"✨ Instant Delivery\n"
-        f"⚡ Automated Processing\n\n"
-        f"Select Quantity:\n\n"
-        f"<b>Total:</b>\n"
-        f"<b>{fmt_price(total)}</b>"
+        f"⚡ <code>[ PRODUCT DETAIL // {product['id']} ]</code>\n\n"
+        f"{product['emoji']} <b>{esc(product['name'])}</b>\n\n"
+        f"<code>DESCRIPTION:</code>\n"
+        f"> {esc(product['description'])}\n\n"
+        f"<code>┌─ UNIT PRICE :</code> <b>{fmt_price(product['price'])}</b>\n"
+        f"<code>├─ VAULT INVENTORY :</code> {status_tag}\n"
+        f"<code>├─ DELIVERY   :</code> <b>INSTANT DEPLOY [●]</b>\n"
+        f"<code>└─ QUANTITY   :</code> <b>{qty}x</b>\n\n"
+        f"<code>TOTAL PAYABLE // </code><b>{fmt_price(total)}</b>"
     )
 
     if sold_out:
         rows = [
-            [InlineKeyboardButton("⏳ Sold Out", callback_data="noop")],
+            [InlineKeyboardButton("🚫 [ OUT OF STOCK ]", callback_data="noop")],
             [
-                InlineKeyboardButton("‹ Back", callback_data="catalog"),
-                InlineKeyboardButton("⌂ Home", callback_data="home"),
+                InlineKeyboardButton("« Catalog", callback_data="catalog"),
+                InlineKeyboardButton("« Terminal", callback_data="home"),
             ],
         ]
     else:
         rows = [
             [
-                InlineKeyboardButton("−", callback_data=f"qtydec:{product['id']}"),
-                InlineKeyboardButton(f"{qty}", callback_data="noop"),
-                InlineKeyboardButton("+", callback_data=f"qtyinc:{product['id']}"),
+                InlineKeyboardButton("[-]", callback_data=f"qtydec:{product['id']}"),
+                InlineKeyboardButton(f"Qty: {qty}", callback_data="noop"),
+                InlineKeyboardButton("[+]", callback_data=f"qtyinc:{product['id']}"),
             ],
-            [InlineKeyboardButton("⚡ Checkout Now", callback_data=f"buy:{product['id']}")],
+            [InlineKeyboardButton("⚡ [ PROCEED CHECKOUT ]", callback_data=f"buy:{product['id']}")],
             [
-                InlineKeyboardButton("‹ Back", callback_data="catalog"),
-                InlineKeyboardButton("⌂ Home", callback_data="home"),
+                InlineKeyboardButton("« Catalog", callback_data="catalog"),
+                InlineKeyboardButton("« Terminal", callback_data="home"),
             ],
         ]
     return text, InlineKeyboardMarkup(rows)
@@ -195,16 +200,16 @@ def product_page(product, qty):
 
 def stock_page():
     products = db.get_active_products()
-    parts = [header("<b>📦 Live Stock</b>")]
+    parts = [header("LIVE VAULT INVENTORY")]
     if not products:
-        parts.append("No products available.")
+        parts.append("<code>[ NO INVENTORY DATA ]</code>")
     for p in products:
         parts.append(product_line(p))
     text = "\n\n".join(parts)
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🛍️ Shop Now", callback_data="catalog")],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("⚡ [ EXECUTE ORDER ]", callback_data="catalog")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -212,9 +217,9 @@ def stock_page():
 
 def orders_page(user_id):
     rows = db.get_my_orders(user_id)
-    parts = [header("<b>🧾 My Orders</b>")]
+    parts = [header("ORDER LOGS")]
     if not rows:
-        parts.append("No orders yet.\nStart shopping now! 🛍️")
+        parts.append("<code>[ NO TRANSACTION LOGS FOUND ]</code>")
     for o in rows:
         icon = {
             "PENDING": "⏳",
@@ -225,15 +230,15 @@ def orders_page(user_id):
             "AWAITING_ADMIN": "🕐",
         }.get(o["status"], "❓")
         parts.append(
-            f"{esc(o['product_name'])} × {o['qty']}\n"
-            f"   <code>{o['order_id']}</code>\n"
-            f"   {fmt_price(o['total'])} · {icon} {o['status']}"
+            f"<code>┌─ TX:</code> <code>{o['order_id']}</code>\n"
+            f"<code>├─ ITEM:</code> {esc(o['product_name'])} x{o['qty']}\n"
+            f"<code>└─ TOTAL:</code> <b>{fmt_price(o['total'])}</b> <code>[{icon} {o['status']}]</code>"
         )
     text = "\n\n".join(parts)
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🛍️ Shop Now", callback_data="catalog")],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("⚡ [ EXECUTE ORDER ]", callback_data="catalog")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -242,45 +247,44 @@ def orders_page(user_id):
 def contact_page():
     admin = db.get_setting("ADMIN_USERNAME", "admin")
     text = (
-        f"{header('<b>🎧 Customer Support</b>')}\n\n"
-        f"Need assistance or having issues?\n"
-        f"Contact our admin: @{esc(admin)}\n\n"
-        f"<b>Available Commands</b>\n"
-        f"/start — Main Menu\n"
-        f"/products — Browse Products\n"
-        f"/promo — Special Offers\n"
-        f"/stock — Live Stock\n"
-        f"/orders — Order History\n"
-        f"/help — Support & Help"
+        f"{header('SUPPORT DESK // ENCRYPTED COMMS')}\n\n"
+        f"<code>NODE ADMIN //</code> @{esc(admin)}\n\n"
+        f"<code>─── [ TERMINAL COMMANDS ] ───</code>\n"
+        f"<code>/start</code>    - Launch main terminal\n"
+        f"<code>/products</code> - Open product catalog\n"
+        f"<code>/stock</code>    - Query vault inventory\n"
+        f"<code>/promo</code>    - Special deal feeds\n"
+        f"<code>/orders</code>   - Query order logs\n"
+        f"<code>/support</code>  - Open support comms"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("📩 Contact Admin", url=f"https://t.me/{admin}")],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("🛰️ Connect Admin Comms", url=f"https://t.me/{admin}")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
 
 
-def loading_text(msg="Processing your order..."):
-    return f"⏳ <b>{esc(msg)}</b>\n\nPlease wait a moment...", InlineKeyboardMarkup([])
+def loading_text(msg="Processing crypto gateway request..."):
+    return f"⚡ <code>[ {esc(msg)} ]</code>\n\n<code>Connecting to blockchain network...</code>", InlineKeyboardMarkup([])
 
 
 def payment_method_page(order, usdt_amount=None):
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
     text = (
-        f"{header('<b>💳 Payment Method</b>')}\n\n"
-        f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
-        f"💰 Total: <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
-        f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
-        f"Please select your payment method 👇"
+        f"{header('CRYPTO SETTLEMENT GATEWAY')}\n\n"
+        f"<code>ORDER ID //</code> <code>{order['order_id']}</code>\n"
+        f"<code>ITEM     //</code> {esc(order['product_name'])} x{order['qty']}\n"
+        f"<code>VALUE    //</code> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n\n"
+        f"<code>Select Web3 settlement channel:</code>"
     )
     buttons = [
         [
-            InlineKeyboardButton("🆔 Binance Pay (ID)", callback_data=f"pay_binance:{order['order_id']}"),
-            InlineKeyboardButton("💲 USDT (BEP20)", callback_data=f"pay_usdt:{order['order_id']}"),
+            InlineKeyboardButton("🟡 Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}"),
+            InlineKeyboardButton("🌐 USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}"),
         ],
-        [InlineKeyboardButton("⌂ Home", callback_data="home")],
+        [InlineKeyboardButton("« Abort Order", callback_data="home")],
     ]
     return text, InlineKeyboardMarkup(buttons)
 
@@ -289,19 +293,18 @@ def binance_pay_page(order, usdt_amount=None):
     pay_id = config.BINANCE_PAY_ID
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
     text = (
-        f"{header('<b>🟡 Binance Pay Payment</b>')}\n\n"
-        f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
-        f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
-        f"💰 Total: <b>{fmt_price(order['total'])}</b>\n"
-        f"💲 Exact Amount: <b>{amt:.2f} USDT</b>\n\n"
-        f"📲 <b>Send to Binance ID:</b>\n"
+        f"{header('BINANCE PAY SETTLEMENT')}\n\n"
+        f"<code>ORDER ID //</code> <code>{order['order_id']}</code>\n"
+        f"<code>ITEM     //</code> {esc(order['product_name'])} x{order['qty']}\n"
+        f"<code>AMOUNT   //</code> <b>{amt:.2f} USDT</b> (Exact)\n\n"
+        f"📲 <b>TARGET BINANCE ID:</b>\n"
         f"<code>{pay_id}</code>\n\n"
-        f"<b>Transfer Steps:</b>\n"
-        f"1. Open Binance App -> Pay / Send\n"
-        f"2. Enter Binance ID: <code>{pay_id}</code>\n"
-        f"3. Send exactly <b>{amt:.2f} USDT</b>\n"
-        f"4. Add Order ID to notes: <code>{order['order_id']}</code>\n\n"
-        f"After transferring, click <b>✅ I Have Paid</b> below 👇"
+        f"<code>TRANSACTION GUIDE:</code>\n"
+        f"1. Open Binance App ➔ Pay / Send\n"
+        f"2. Input Binance ID: <code>{pay_id}</code>\n"
+        f"3. Send exact: <b>{amt:.2f} USDT</b>\n"
+        f"4. Add note/remark: <code>{order['order_id']}</code>\n\n"
+        f"Click <b>[ CONFIRM TRANSFER ]</b> once completed 👇"
     )
     keyboard = InlineKeyboardMarkup(
         [
@@ -313,12 +316,12 @@ def binance_pay_page(order, usdt_amount=None):
             ],
             [
                 InlineKeyboardButton(
-                    "✅ I Have Paid",
+                    "⚡ [ CONFIRM TRANSFER ]",
                     callback_data=f"confirm_pay:{order['order_id']}",
                 )
             ],
-            [InlineKeyboardButton("💲 Pay via BEP20 Wallet", callback_data=f"pay_usdt:{order['order_id']}")],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("🌐 Switch to BEP20 Wallet", callback_data=f"pay_usdt:{order['order_id']}")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -328,19 +331,17 @@ def crypto_usdt_page(order, usdt_amount=None):
     wallet = config.CRYPTO_WALLET_USDT
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
     text = (
-        f"{header('<b>💳 USDT Payment (BEP20)</b>')}\n\n"
-        f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
-        f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
-        f"💰 Total: <b>{fmt_price(order['total'])}</b>\n"
-        f"💲 Exact Amount: <b>{amt:.2f} USDT</b>\n\n"
-        f"📩 <b>Wallet Address (BEP20 / BSC):</b>\n"
+        f"{header('USDT BEP20 ON-CHAIN GATEWAY')}\n\n"
+        f"<code>ORDER ID //</code> <code>{order['order_id']}</code>\n"
+        f"<code>ITEM     //</code> {esc(order['product_name'])} x{order['qty']}\n"
+        f"<code>AMOUNT   //</code> <b>{amt:.2f} USDT</b>\n\n"
+        f"📩 <b>CONTRACT / WALLET (BSC / BEP20):</b>\n"
         f"<code>{wallet}</code>\n\n"
-        f"⚠️ <b>IMPORTANT:</b>\n"
-        f"> Send exactly <b>{amt:.2f} USDT</b>\n"
-        f"> Ensure network is <b>BEP20 (BSC)</b>\n"
-        f"> Do not send any other tokens!\n\n"
-        f"After transferring, click <b>✅ I Have Paid</b> below 👇\n\n"
-        f"Product will be delivered after admin verification. ✅"
+        f"⚠️ <code>NETWORK NOTICE:</code>\n"
+        f"• Exact transfer: <b>{amt:.2f} USDT</b>\n"
+        f"• Network: <b>BNB Smart Chain (BEP20)</b>\n"
+        f"• Instant deployment upon admin ledger validation.\n\n"
+        f"Click <b>[ CONFIRM TRANSFER ]</b> once broadcasted 👇"
     )
     keyboard = InlineKeyboardMarkup(
         [
@@ -352,12 +353,12 @@ def crypto_usdt_page(order, usdt_amount=None):
             ],
             [
                 InlineKeyboardButton(
-                    "✅ I Have Paid",
+                    "⚡ [ CONFIRM TRANSFER ]",
                     callback_data=f"confirm_pay:{order['order_id']}",
                 )
             ],
-            [InlineKeyboardButton("🟡 Pay via Binance ID", callback_data=f"pay_binance:{order['order_id']}")],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("🟡 Switch to Binance Pay", callback_data=f"pay_binance:{order['order_id']}")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -365,17 +366,17 @@ def crypto_usdt_page(order, usdt_amount=None):
 
 def test_payment_page(order):
     text = (
-        f"{header('<b>🧪 Test Mode</b>')}\n\n"
-        f"Payment is <b>simulated</b> — no real money required.\n\n"
-        f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
-        f"💰 <b>{fmt_price(order['total'])}</b>\n"
-        f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
-        f"Click the button below to simulate successful payment."
+        f"{header('TESTNET SIMULATION')}\n\n"
+        f"<code>SIMULATED PAYMENT NODE</code>\n\n"
+        f"<code>ORDER ID //</code> <code>{order['order_id']}</code>\n"
+        f"<code>ITEM     //</code> {esc(order['product_name'])} x{order['qty']}\n"
+        f"<code>TOTAL    //</code> <b>{fmt_price(order['total'])}</b>\n\n"
+        f"Execute simulated transaction below:"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("✅ Pay Now (Simulate)", callback_data=f"paid:{order['order_id']}")],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("⚡ [ SIMULATE SUCCESS ]", callback_data=f"paid:{order['order_id']}")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -383,20 +384,20 @@ def test_payment_page(order):
 
 def pending_page(order):
     text = (
-        f"{header('<b>⏳ Awaiting Payment</b>')}\n\n"
-        f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
-        f"💰 <b>{fmt_price(order['total'])}</b>\n"
-        f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
-        f"Complete your payment and check status."
+        f"{header('SETTLEMENT PENDING')}\n\n"
+        f"<code>ORDER ID //</code> <code>{order['order_id']}</code>\n"
+        f"<code>ITEM     //</code> {esc(order['product_name'])} x{order['qty']}\n"
+        f"<code>TOTAL    //</code> <b>{fmt_price(order['total'])}</b>\n\n"
+        f"<code>Awaiting transaction confirmation on the network...</code>"
     )
     keyboard = InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
-                    "↻ Check Status", callback_data=f"paid:{order['order_id']}"
+                    "↻ Query Status", callback_data=f"paid:{order['order_id']}"
                 )
             ],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -404,64 +405,63 @@ def pending_page(order):
 
 def awaiting_admin_page(order_id):
     text = (
-        f"{header('<b>🕐 Awaiting Verification</b>')}\n\n"
-        f"🧾 Order ID: <code>{esc(order_id)}</code>\n\n"
-        f"Your payment confirmation has been submitted and is being verified by admin.\n"
-        f"Product will be delivered automatically once approved. 🙏"
+        f"{header('TRANSACTION IN VERIFICATION')}\n\n"
+        f"<code>ORDER ID //</code> <code>{esc(order_id)}</code>\n\n"
+        f"<code>Transaction broadcast registered.</code>\n"
+        f"<code>Validator node is currently reviewing the ledger.</code>\n"
+        f"<code>Auto-dispatch will trigger immediately upon verification. 🙏</code>"
     )
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("⌂ Home", callback_data="home")]]
+        [[InlineKeyboardButton("« Return Terminal", callback_data="home")]]
     )
     return text, keyboard
 
 
 def success_page(order_id):
     text = (
-        f"{header('<b>✓ Payment Successful</b>')}\n\n"
-        f"✓ <b>Payment Verified!</b>\n"
-        f"🧾 Order ID: <code>{esc(order_id)}</code>\n\n"
-        f"Your digital product has been delivered in the message above. 🎁\n"
-        f"Thank you for your purchase!"
+        f"{header('TRANSACTION COMPLETED')}\n\n"
+        f"<code>[● LEDGER VALIDATED & SETTLED]</code>\n"
+        f"<code>ORDER ID //</code> <code>{esc(order_id)}</code>\n\n"
+        f"🎁 <b>Digital payload has been deployed above.</b>\n"
+        f"Thank you for transacting with us."
     )
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("⌂ Home", callback_data="home")]]
+        [[InlineKeyboardButton("« Return Terminal", callback_data="home")]]
     )
     return text, keyboard
 
 
 def no_stock_paid_page(order_id):
     text = (
-        f"{header('<b>⚠️ Payment Received</b>')}\n\n"
-        f"✓ <b>Your payment was received.</b>\n"
-        f"🧾 Order ID: <code>{esc(order_id)}</code>\n\n"
-        f"However, this item is currently out of stock.\n"
-        f"Admin will contact you directly for refund/replacement.\n"
-        f"Thank you for your patience! 🙏"
+        f"{header('VAULT DEPLETED // REFUND PENDING')}\n\n"
+        f"<code>PAYMENT CONFIRMED:</code> <code>{esc(order_id)}</code>\n\n"
+        f"<code>Target vault inventory was depleted by concurrent order.</code>\n"
+        f"<code>Admin is issuing immediate manual refund/dispatch.</code>"
     )
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("⌂ Home", callback_data="home")]]
+        [[InlineKeyboardButton("« Return Terminal", callback_data="home")]]
     )
     return text, keyboard
 
 
 def error_page(message="An error occurred, please try again later."):
-    text = f"{header('<b>Oops</b>')}\n\n⚠️ {esc(message)}"
+    text = f"{header('EXECUTION ERROR')}\n\n⚠️ <code>{esc(message)}</code>"
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("⌂ Home", callback_data="home")]]
+        [[InlineKeyboardButton("« Return Terminal", callback_data="home")]]
     )
     return text, keyboard
 
 
 def soldout_page():
     text = (
-        f"{header('<b>⏳ Sold Out</b>')}\n\n"
-        f"Sorry, this product is currently out of stock.\n"
-        f"Please check other available products."
+        f"{header('VAULT DEPLETED')}\n\n"
+        f"<code>Selected item is currently out of stock.</code>\n"
+        f"<code>Please select alternative available assets.</code>"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🛍️ Browse Catalog", callback_data="catalog")],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("⚡ [ VIEW CATALOG ]", callback_data="catalog")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -475,20 +475,20 @@ def admin_panel():
     completed = sum(1 for o in orders if o["status"] == "COMPLETED")
 
     text = (
-        f"{header('<b>🔐 Admin Panel</b>')}\n\n"
-        f"<b>Summary</b>\n"
-        f"   Active Products: {len(products)}\n"
-        f"   Available Stock: {total_stock}\n"
-        f"   Total Orders   : {len(orders)} ({pending} pending, {completed} completed)\n\n"
-        f"Manage products & stock directly in Google Sheets."
+        f"{header('ADMIN ROOT CONSOLE')}\n\n"
+        f"<code>METRICS SUMMARY:</code>\n"
+        f"<code>├─ ACTIVE ASSETS :</code> {len(products)}\n"
+        f"<code>├─ VAULT ITEMS   :</code> {total_stock}\n"
+        f"<code>└─ TRANSACTIONS  :</code> {len(orders)} ({pending} pend, {completed} done)\n\n"
+        f"<code>Connected to Google Sheets database ledger.</code>"
     )
     keyboard = InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("📦 Stock", callback_data="stock"),
-                InlineKeyboardButton("🧾 Orders", callback_data="ordersadmin"),
+                InlineKeyboardButton("📦 Vault Stock", callback_data="stock"),
+                InlineKeyboardButton("🧾 Orders Log", callback_data="ordersadmin"),
             ],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -496,9 +496,9 @@ def admin_panel():
 
 def admin_orders_page():
     rows = db.get_all_orders(limit=50)
-    parts = [header("<b>🧾 All Orders</b>")]
+    parts = [header("GLOBAL TRANSACTION LEDGER")]
     if not rows:
-        parts.append("No orders yet.")
+        parts.append("<code>[ NO TRANSACTIONS LOGGED ]</code>")
     for o in rows:
         icon = {
             "PENDING": "⏳",
@@ -509,15 +509,15 @@ def admin_orders_page():
             "AWAITING_ADMIN": "🕐",
         }.get(o["status"], "❓")
         parts.append(
-            f"{esc(o['product_name'])} × {o['qty']}\n"
-            f"   <code>{o['order_id']}</code>\n"
-            f"   {fmt_price(o['total'])} · {icon} {o['status']} · {o['telegram_id']}"
+            f"<code>┌─ TX:</code> <code>{o['order_id']}</code>\n"
+            f"<code>├─ ITEM:</code> {esc(o['product_name'])} x{o['qty']}\n"
+            f"<code>└─ USER:</code> <code>{o['telegram_id']}</code> ➔ <b>{fmt_price(o['total'])}</b> <code>[{icon} {o['status']}]</code>"
         )
     text = "\n\n".join(parts)
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🔐 Admin Panel", callback_data="admin")],
-            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+            [InlineKeyboardButton("🔐 Admin Console", callback_data="admin")],
+            [InlineKeyboardButton("« Return Terminal", callback_data="home")],
         ]
     )
     return text, keyboard
