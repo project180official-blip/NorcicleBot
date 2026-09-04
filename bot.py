@@ -684,6 +684,21 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
         context.user_data["product_id"] = product_id
         await render_product(chat_id, msg_id, product_id, qty)
 
+    elif data.startswith("customqty:"):
+        product_id = data.split(":", 1)[1]
+        context.user_data["awaiting_qty_for"] = product_id
+        context.user_data["product_id"] = product_id
+        avail = db.count_available(product_id)
+        text = (
+            f"✏️ <b>Enter Custom Quantity</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Please type the number of items you want to buy (1 - {avail}) in the chat below 👇"
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("« Cancel", callback_data=f"product:{product_id}")]
+        ])
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+
     elif data.startswith("buy:"):
         product_id = data.split(":", 1)[1]
         qty = context.user_data.get("qty", 1)
@@ -1568,8 +1583,44 @@ async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (update.message.text or "").strip()
+    
+    # 1. Cek jika user sedang mengetik custom quantity
+    awaiting_pid = context.user_data.get("awaiting_qty_for")
+    if awaiting_pid and text.isdigit():
+        target_qty = int(text)
+        product = get_product(awaiting_pid)
+        if product:
+            avail = db.count_available(awaiting_pid)
+            if target_qty < 1:
+                target_qty = 1
+            elif target_qty > avail:
+                target_qty = max(1, avail)
+            
+            context.user_data["qty"] = target_qty
+            context.user_data["product_id"] = awaiting_pid
+            context.user_data.pop("awaiting_qty_for", None)
+            
+            text_msg, kb = ui.product_page(product, target_qty)
+            await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
+            return
+
+    # 2. Cek jika user mengetik nomor produk atau jumlah qty saat melihat produk
     if text.isdigit():
         num = int(text)
+        current_pid = context.user_data.get("product_id")
+        
+        # Jika user sedang di halaman produk dan mengetik angka -> set sebagai qty
+        if current_pid:
+            product = get_product(current_pid)
+            if product:
+                avail = db.count_available(current_pid)
+                set_qty = max(1, min(avail, num))
+                context.user_data["qty"] = set_qty
+                text_msg, kb = ui.product_page(product, set_qty)
+                await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
+                return
+
+        # Jika user mengetik nomor indeks produk di catalog
         products = db.get_active_products()
         if 1 <= num <= len(products):
             product = products[num - 1]
@@ -1585,7 +1636,8 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text_msg, kb = ui.product_page(product, qty)
                 await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
             return
-    await update.message.reply_text("Gunakan tombol menu atau ketik /menu. 🙂")
+
+    await update.message.reply_text("Please use the menu buttons or type /start to shop. 🙂")
 
 
 app = None

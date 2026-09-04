@@ -216,10 +216,11 @@ def product_page(product, qty):
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"💵 <b>Unit Price:</b> <b>{fmt_price(unit_price)}</b>\n"
         f"📦 <b>Status    :</b> {stock_badge}\n"
-        f"⚡ <b>Format    :</b> Instant Delivery (.txt credential)\n"
+        f"⚡ <b>Delivery  :</b> Instant Delivery (.txt credential)\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"Selected Quantity: <b>{qty}x</b>\n"
-        f"💰 <b>Total Payable :</b> <b>{fmt_price(total)}</b>"
+        f"🔢 <b>Selected Quantity:</b> <b>{qty}x</b>\n"
+        f"💰 <b>Total Payable     :</b> <b>{fmt_price(total)}</b>\n\n"
+        f"💡 <i>Tip: You can use [-] / [+] or send a number directly in chat to set custom quantity.</i>"
     )
 
     if sold_out:
@@ -236,6 +237,9 @@ def product_page(product, qty):
                 InlineKeyboardButton("➖", callback_data=f"qtydec:{product['id']}"),
                 InlineKeyboardButton(f"Qty: {qty}", callback_data="noop"),
                 InlineKeyboardButton("➕", callback_data=f"qtyinc:{product['id']}"),
+            ],
+            [
+                InlineKeyboardButton("✏️ Enter Custom Qty", callback_data=f"customqty:{product['id']}"),
             ],
             [InlineKeyboardButton(f"⚡ Order Now • {fmt_price(total)}", callback_data=f"buy:{product['id']}")],
             [
