@@ -42,10 +42,28 @@ def force_join_page():
     return text, keyboard
 
 
+def calculate_item_price(product, qty):
+    pid = str(product.get("id", "")).upper()
+    pname = str(product.get("name", "")).lower()
+    base_price = float(product.get("price", 0))
+
+    # Tiered pricing khusus Gemini AI
+    if pid == "P0001" or "gemini" in pname:
+        unit_price = 0.8 if qty >= 5 else 1.2
+        return unit_price, round(unit_price * qty, 2)
+
+    return base_price, round(base_price * qty, 2)
+
+
 def product_line(p):
     avail = db.count_available(p["id"])
     stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
-    return f"• {p['emoji']} <b>{esc(p['name'])}</b>\n  └ 💵 <b>{fmt_price(p['price'])}</b>  |  {stock_badge}"
+    pname = str(p.get("name", "")).lower()
+    if p.get("id") == "P0001" or "gemini" in pname:
+        price_display = "$1.20 ($0.80 for 5+)"
+    else:
+        price_display = fmt_price(p['price'])
+    return f"• {p['emoji']} <b>{esc(p['name'])}</b>\n  └ 💵 <b>{price_display}</b>  |  {stock_badge}"
 
 
 def home_text(user_name=None):
@@ -65,9 +83,14 @@ def home_text(user_name=None):
     for i, p in enumerate(products, 1):
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 0"
+        pname = str(p.get("name", "")).lower()
+        if p.get("id") == "P0001" or "gemini" in pname:
+            price_tag = "$1.20 ($0.80 for 5+)"
+        else:
+            price_tag = fmt_price(p['price'])
         rows.append([
             InlineKeyboardButton(
-                f"{p['emoji']} {esc(p['name'])} — {fmt_price(p['price'])} ({stock_badge})",
+                f"{p['emoji']} {esc(p['name'])} — {price_tag} ({stock_badge})",
                 callback_data=f"product:{p['id']}"
             )
         ])
@@ -137,9 +160,14 @@ def catalog_text():
     for i, p in enumerate(products, 1):
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
+        pname = str(p.get("name", "")).lower()
+        if p.get("id") == "P0001" or "gemini" in pname:
+            price_tag = "$1.20 ($0.80 for 5+)"
+        else:
+            price_tag = fmt_price(p['price'])
         items_list.append(
             f"<b>{i}. {p['emoji']} {esc(p['name'])}</b>\n"
-            f"   └ 💵 <b>{fmt_price(p['price'])}</b>  |  {stock_badge}"
+            f"   └ 💵 <b>{price_tag}</b>  |  {stock_badge}"
         )
 
     text = (
@@ -169,23 +197,29 @@ def catalog_text():
 
 def product_page(product, qty):
     avail = db.count_available(product["id"])
-    total = product["price"] * qty
+    unit_price, total = calculate_item_price(product, qty)
     sold_out = avail < 1
 
     stock_badge = f"🟢 In Stock ({avail} available)" if avail > 0 else "🔴 Out of Stock"
+    
+    pname = str(product.get("name", "")).lower()
+    promo_badge = ""
+    if product.get("id") == "P0001" or "gemini" in pname:
+        promo_badge = "\n🎁 <i>Tier Pricing: 1-4 pcs = $1.20 | 5+ pcs = $0.80/ea</i>"
 
     text = (
         f"{product['emoji']} <b>{esc(product['name'])}</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"📖 <b>Description:</b>\n"
-        f"{esc(product['description'])}\n\n"
+        f"{esc(product['description'])}\n"
+        f"{promo_badge}\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"💵 <b>Price :</b> <b>{fmt_price(product['price'])}</b>\n"
-        f"📦 <b>Status:</b> {stock_badge}\n"
-        f"⚡ <b>Format:</b> Instant Delivery (.txt credential)\n"
+        f"💵 <b>Unit Price:</b> <b>{fmt_price(unit_price)}</b>\n"
+        f"📦 <b>Status    :</b> {stock_badge}\n"
+        f"⚡ <b>Format    :</b> Instant Delivery (.txt credential)\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"Selected Quantity: <b>{qty}x</b>\n"
-        f"💰 <b>Total Payable:</b> <b>{fmt_price(total)}</b>"
+        f"💰 <b>Total Payable :</b> <b>{fmt_price(total)}</b>"
     )
 
     if sold_out:

@@ -746,7 +746,7 @@ async def do_checkout(query, context, chat_id, msg_id):
         chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
     )
 
-    total = product["price"] * qty
+    unit_price, total = ui.calculate_item_price(product, qty)
     user = query.from_user
     if db.count_available(product_id) < qty:
         text, kb = ui.soldout_page()
@@ -1581,8 +1581,8 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text_msg, kb = soldout_page()
                 await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
             else:
-                from ui import product_page
-                text_msg, kb = product_page(product, 1)
+                qty = context.user_data.get("qty", 1)
+                text_msg, kb = ui.product_page(product, qty)
                 await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
             return
     await update.message.reply_text("Gunakan tombol menu atau ketik /menu. 🙂")
