@@ -40,5 +40,5 @@ CHANNEL_USERNAME = os.environ.get("CHANNEL_USERNAME", "@DigitalinUpdate")
 # (biarkan kosong jika tidak ingin banner).
 BANNER_URL = os.environ.get(
     "BANNER_URL",
-    "https://i.postimg.cc/c4CtCs95/Banner-Shop.jpg",
+    "https://i.ibb.co.com/VWJw3H7z/Chat-GPT-Image-Sep-4-2026-06-34-34-PM.png",
 ).strip()
