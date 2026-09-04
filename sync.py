@@ -18,10 +18,12 @@ _SYNC_TTL_SECONDS = 20.0
 
 
 def fetch_csv(url):
+    # Coba gviz URL dulu, jika mengembalikan format sheet yang salah coba export URL
     r = requests.get(url, timeout=20)
     r.raise_for_status()
     r.encoding = "utf-8"
-    return list(csv.DictReader(io.StringIO(r.text)))
+    rows = list(csv.DictReader(io.StringIO(r.text)))
+    return rows
 
 
 def _parse_price(raw):
@@ -218,7 +220,8 @@ def sync_from_sheets(force=False):
                 elif ku.startswith("EMOJI") and emoji == "📦":
                     emoji = v or "📦"
                 elif ku.startswith("PRICE"):
-                    price_raw = v
+                    if v is not None and str(v).strip() != "":
+                        price_raw = v
                 elif ku.startswith("STATUS") and status == "ACTIVE":
                     status = v or "ACTIVE"
                 elif ku.startswith("DESC") and not desc:
