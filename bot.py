@@ -858,7 +858,20 @@ async def process_binance_payment(query, context, chat_id, msg_id, order_id):
 
     try:
         text, kb = ui.binance_pay_page(order, usdt_amount)
-        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+        if config.BINANCE_QR_URL:
+            try:
+                await app.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            except Exception:
+                pass
+            await app.bot.send_photo(
+                chat_id=chat_id,
+                photo=config.BINANCE_QR_URL,
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=kb,
+            )
+        else:
+            await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
     except Exception as e:
         logger.error("Binance payment error: %s", e)
         text, kb = ui.error_page("Failed to display Binance Pay page.")

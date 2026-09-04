@@ -378,7 +378,7 @@ def binance_pay_page(order, usdt_amount=None):
         f"📲 <b>Binance Pay ID:</b>\n"
         f"👉 <code>{pay_id}</code>\n\n"
         f"<b>Payment Steps:</b>\n"
-        f"1. Open your <b>Binance App</b> ➔ <b>Pay / Send</b>\n"
+        f"1. <b>Scan QR Code</b> above or open Binance Pay\n"
         f"2. Input Binance ID: <code>{pay_id}</code>\n"
         f"3. Enter exact amount: <b>{amt:.2f} USDT</b>\n"
         f"4. Add Order ID to notes: <code>{order['order_id']}</code>\n\n"
