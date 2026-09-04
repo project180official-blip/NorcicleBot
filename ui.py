@@ -56,35 +56,39 @@ def home_text(user_name=None):
     products = db.get_active_products()
     name = f", <b>{esc(user_name)}</b>" if user_name else ""
 
-    items = []
-    for i, p in enumerate(products, 1):
-        avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail} in stock" if avail > 0 else "🔴 Sold out"
-        items.append(f"<b>{i}. {p['emoji']} {esc(p['name'])}</b>\nPrice: <b>{fmt_price(p['price'])}</b> • {stock_badge}")
-    
-    product_list = "\n\n".join(items) if items else "No products currently available."
-
     text = (
         f"👋 Welcome to <b>{BRAND}</b>{name}!\n\n"
-        f"<b>Available Products:</b>\n\n"
-        f"{product_list}\n\n"
-        f"Tap the buttons below to browse and order 👇"
+        f"⚡ <b>Instant Delivery • 24/7 Automated</b>\n"
+        f"💎 High-Quality Digital Subscriptions & Accounts\n\n"
+        f"Select a product directly below to purchase 👇"
     )
-    keyboard = InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton("🛍️ Browse Catalog", callback_data="catalog")],
-            [
-                InlineKeyboardButton("📦 Live Stock", callback_data="stock"),
-                InlineKeyboardButton("🧾 My Orders", callback_data="orders"),
-            ],
-            [
-                InlineKeyboardButton("🤝 Affiliate", callback_data="affiliate"),
-                InlineKeyboardButton("💬 Support", callback_data="contact"),
-            ],
-            [InlineKeyboardButton("↻ Refresh Menu", callback_data="refresh")],
-        ]
-    )
-    return text, keyboard
+
+    rows = []
+    # Baris tombol produk langsung (1 atau 2 kolom)
+    for p in products:
+        avail = db.count_available(p["id"])
+        stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 0"
+        rows.append([
+            InlineKeyboardButton(
+                f"{p['emoji']} {esc(p['name'])} • {fmt_price(p['price'])} ({stock_badge})",
+                callback_data=f"product:{p['id']}"
+            )
+        ])
+
+    # Menu utility di bawah produk
+    rows.append([
+        InlineKeyboardButton("📦 Live Stock", callback_data="stock"),
+        InlineKeyboardButton("🧾 My Orders", callback_data="orders"),
+    ])
+    rows.append([
+        InlineKeyboardButton("🤝 Affiliate", callback_data="affiliate"),
+        InlineKeyboardButton("💬 Support", callback_data="contact"),
+    ])
+    rows.append([
+        InlineKeyboardButton("↻ Refresh Menu", callback_data="refresh"),
+    ])
+
+    return text, InlineKeyboardMarkup(rows)
 
 
 def promo_page():
