@@ -708,9 +708,9 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
         order_id = data.split(":", 1)[1]
         await admin_reject(query, context, chat_id, msg_id, order_id)
 
-    elif data.startswith("pay_qris:"):
+    elif data.startswith("pay_binance:"):
         order_id = data.split(":", 1)[1]
-        await process_qris_payment(query, context, chat_id, msg_id, order_id)
+        await process_binance_payment(query, context, chat_id, msg_id, order_id)
 
     elif data.startswith("pay_usdt:"):
         order_id = data.split(":", 1)[1]
@@ -796,32 +796,20 @@ async def do_checkout(query, context, chat_id, msg_id):
         return
 
     try:
-        text, kb = ui.qris_static_page(order)
-        if config.QRIS_IMAGE_URL:
-            try:
-                await app.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            except Exception:
-                pass
-            await app.bot.send_photo(
-                chat_id=chat_id,
-                photo=config.QRIS_IMAGE_URL,
-                caption=text,
-                parse_mode="HTML",
-                reply_markup=kb,
-            )
-        else:
-            await safe_edit(
-                chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
-            )
+        usdt_amount = await asyncio.to_thread(calculate_usdt, total)
+        text, kb = ui.payment_method_page(order, usdt_amount)
+        await safe_edit(
+            chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
+        )
         await notify_admin(
             f"🔔 <b>PESANAN BARU</b>\n\n"
             f"🆔 Order: <code>{order_id}</code>\n"
             f"{product['emoji']} {ui.esc(product['name'])} x{qty}\n"
-            f"💰 Total: <b>Rp{total:,}</b>\n"
+            f"💰 Total: <b>Rp{total:,}</b> (Est: {usdt_amount:.2f} USDT)\n"
             f"👤 User: @{user.username or '-'} ({user.id})"
         )
     except Exception as e:
-        logger.error("QRIS payment error: %s", e)
+        logger.error("Payment method selection error: %s", e)
         db.release_reservation(order_id)
         db.set_order_status(order_id, "FAILED")
         await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
@@ -844,28 +832,26 @@ async def do_checkout(query, context, chat_id, msg_id):
         )
 
 
-async def process_qris_payment(query, context, chat_id, msg_id, order_id):
+async def process_binance_payment(query, context, chat_id, msg_id, order_id):
     order = db.get_order(order_id)
     if not order or str(order["telegram_id"]) != str(query.from_user.id):
         await query.answer("Order tidak ditemukan.")
         return
 
-    if config.PAYMENT_METHOD == "nevapedia":
-        if not config.NEVAPEDIA_API_KEY:
-            text, kb = ui.error_page("Payment gateway belum dikonfigurasi.")
-            await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
-            return
-        invoice = await asyncio.to_thread(nevapedia_create_invoice, order)
-        if not invoice:
-            text, kb = ui.error_page("Gagal membuat pembayaran.")
-            await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
-            return
-        db.update_payment_id(order_id, invoice.get("invoice_id"))
-        text, kb = ui.nevapedia_page(order, invoice)
-    else:
-        text, kb = ui.qris_static_page(order)
+    total = order["total"]
+    usdt_amount = await asyncio.to_thread(calculate_usdt, total)
+    if not usdt_amount:
+        text, kb = ui.error_page("Gagal mengambil rate USDT. Coba lagi nanti.")
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+        return
 
-    await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+    try:
+        text, kb = ui.binance_pay_page(order, usdt_amount)
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+    except Exception as e:
+        logger.error("Binance payment error: %s", e)
+        text, kb = ui.error_page("Gagal menampilkan pembayaran Binance Pay.")
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
 
 
 async def process_usdt_payment(query, context, chat_id, msg_id, order_id):

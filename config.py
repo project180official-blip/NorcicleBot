@@ -12,9 +12,10 @@ STOCK_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tq
 SETTINGS_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=SETTINGS"
 ORDERS_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=ORDERS"
 
-PAYMENT_METHOD = os.environ.get("PAYMENT_METHOD", "static_qris").strip().lower()
+PAYMENT_METHOD = os.environ.get("PAYMENT_METHOD", "crypto").strip().lower()
 
-CRYPTO_WALLET_USDT = os.environ.get("CRYPTO_WALLET_USDT", "").strip()
+BINANCE_PAY_ID = os.environ.get("BINANCE_PAY_ID", "356095638").strip()
+CRYPTO_WALLET_USDT = os.environ.get("CRYPTO_WALLET_USDT", "0x5a3f4b292bd4269b82191ffae4dd14f1d0a75756").strip()
 
 AFFILIATE_PERCENT = int(os.environ.get("AFFILIATE_PERCENT", "5") or 0)
 

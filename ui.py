@@ -260,82 +260,61 @@ def loading_text(msg="Membuat pesananmu..."):
     return f"⏳ <b>{esc(msg)}</b>\n\nMohon tunggu sebentar...", InlineKeyboardMarkup([])
 
 
-def payment_method_page(order):
+def payment_method_page(order, usdt_amount=None):
+    usdt_line = f"\n💲 Est. Crypto: <b>{usdt_amount:.2f} USDT</b>" if usdt_amount else ""
     text = (
         f"{header('<b>💳 Pilih Metode Bayar</b>')}\n\n"
         f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
-        f"💰 Total: <b>{fmt_price(order['total'])}</b>\n"
+        f"💰 Total: <b>{fmt_price(order['total'])}</b>{usdt_line}\n"
         f"🧾 <code>{order['order_id']}</code>\n\n"
-        f"Pilih metode pembayaran kamu 👇"
-    )
-    buttons = []
-    if config.QRIS_IMAGE_URL or config.PAYMENT_METHOD in ("static_qris", "nevapedia"):
-        buttons.append(
-            [InlineKeyboardButton("💳 QRIS", callback_data=f"pay_qris:{order['order_id']}")]
-        )
-    if config.CRYPTO_WALLET_USDT:
-        buttons.append(
-            [InlineKeyboardButton("💲 USDT (BEP20)", callback_data=f"pay_usdt:{order['order_id']}")]
-        )
-    buttons.append([InlineKeyboardButton("⌂ Home", callback_data="home")])
-    return text, InlineKeyboardMarkup(buttons)
-
-
-def nevapedia_page(order, invoice):
-    total = invoice.get("total") or order["total"]
-    fee = invoice.get("fee") or 0
-    text = (
-        f"{header('<b>💳 Pembayaran QRIS</b>')}\n\n"
-        f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
-        f"🧾 <code>{order['order_id']}</code>\n\n"
-        f"💰 Transfer PERSIS: <b>{fmt_price(total)}</b>\n"
-        f"   (termasuk biaya {fmt_price(fee)})\n\n"
-        f"1️⃣ Scan/pay QRIS di atas\n"
-        f"2️⃣ Setelah bayar, tekan <b>Cek Status Pembayaran</b> 👇\n\n"
-        f"Produk dikirim otomatis begitu pembayaran terverifikasi. ✅"
-    )
-    buttons = []
-    if invoice.get("payment_link"):
-        buttons.append(
-            [InlineKeyboardButton("💳 Bayar via Link", url=invoice["payment_link"])]
-        )
-    buttons.append(
-        [
-            InlineKeyboardButton(
-                "↻ Cek Status Pembayaran",
-                callback_data=f"paid:{order['order_id']}",
-            )
-        ]
-    )
-    buttons.append([InlineKeyboardButton("⌂ Home", callback_data="home")])
-    return text, InlineKeyboardMarkup(buttons)
-
-
-def qris_static_page(order):
-    text = (
-        f"{header('<b>💳 Pembayaran QRIS</b>')}\n\n"
-        f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
-        f"🧾 <code>{order['order_id']}</code>\n\n"
-        f"💰 Transfer PERSIS: <b>{fmt_price(order['total'])}</b>\n\n"
-        f"1️⃣ Scan/pay QRIS di atas\n"
-        f"2️⃣ Masukkan nominal <b>{fmt_price(order['total'])}</b>\n"
-        f"3️⃣ Setelah bayar, tekan tombol <b>Konfirmasi Pembayaran</b> 👇\n\n"
-        f"Produk dikirim setelah diverifikasi admin. ✅"
+        f"Silakan pilih metode transfer 👇"
     )
     buttons = [
         [
-            InlineKeyboardButton(
-                "✅ Saya Sudah Bayar",
-                callback_data=f"confirm_pay:{order['order_id']}",
-            )
+            InlineKeyboardButton("🆔 Binance Pay (ID)", callback_data=f"pay_binance:{order['order_id']}"),
+            InlineKeyboardButton("💲 USDT (BEP20)", callback_data=f"pay_usdt:{order['order_id']}"),
         ],
+        [InlineKeyboardButton("⌂ Home", callback_data="home")],
     ]
-    if config.CRYPTO_WALLET_USDT:
-        buttons.append(
-            [InlineKeyboardButton("💳 Bayar pakai USDT", callback_data=f"pay_usdt:{order['order_id']}")]
-        )
-    buttons.append([InlineKeyboardButton("⌂ Home", callback_data="home")])
     return text, InlineKeyboardMarkup(buttons)
+
+
+def binance_pay_page(order, usdt_amount):
+    pay_id = config.BINANCE_PAY_ID
+    text = (
+        f"{header('<b>🟡 Pembayaran Binance Pay</b>')}\n\n"
+        f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
+        f"🧾 <code>{order['order_id']}</code>\n\n"
+        f"💰 Total: <b>{fmt_price(order['total'])}</b>\n"
+        f"💲 Nominal: <b>{usdt_amount:.2f} USDT</b>\n\n"
+        f"📲 <b>Kirim ke Binance ID:</b>\n"
+        f"<code>{pay_id}</code>\n\n"
+        f"<b>Cara Transfer:</b>\n"
+        f"1. Buka Binance App -> Pay / Kirim\n"
+        f"2. Masukkan Binance ID: <code>{pay_id}</code>\n"
+        f"3. Kirim persis <b>{usdt_amount:.2f} USDT</b>\n"
+        f"4. Masukkan Order ID di catatan/note: <code>{order['order_id']}</code>\n\n"
+        f"Setelah transfer, tekan tombol <b>✅ Saya Sudah Bayar</b> 👇"
+    )
+    keyboard = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "📋 Copy Binance ID",
+                    copy_text=CopyTextButton(text=pay_id),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "✅ Saya Sudah Bayar",
+                    callback_data=f"confirm_pay:{order['order_id']}",
+                )
+            ],
+            [InlineKeyboardButton("💲 Bayar via Wallet BEP20", callback_data=f"pay_usdt:{order['order_id']}")],
+            [InlineKeyboardButton("⌂ Home", callback_data="home")],
+        ]
+    )
+    return text, keyboard
 
 
 def crypto_usdt_page(order, usdt_amount):
@@ -346,12 +325,13 @@ def crypto_usdt_page(order, usdt_amount):
         f"🧾 <code>{order['order_id']}</code>\n\n"
         f"💰 Total: <b>{fmt_price(order['total'])}</b>\n"
         f"💲 Nilai: <b>{usdt_amount:.2f} USDT</b>\n\n"
-        f"📩 Kirim ke alamat ini (BEP20/BSC):\n"
+        f"📩 <b>Alamat Wallet BEP20 (BSC):</b>\n"
+        f"<code>{wallet}</code>\n\n"
         f"⚠️ <b>PENTING:</b>\n"
         f"> Kirim persis <b>{usdt_amount:.2f} USDT</b>\n"
         f"> Pastikan jaringan <b>BEP20 (BSC)</b>\n"
         f"> Jangan kirim token lain!\n\n"
-        f"Setelah transfer, tekan tombol <b>Saya Sudah Bayar</b> 👇\n\n"
+        f"Setelah transfer, tekan tombol <b>✅ Saya Sudah Bayar</b> 👇\n\n"
         f"Produk dikirim setelah diverifikasi admin. ✅"
     )
     keyboard = InlineKeyboardMarkup(
@@ -368,7 +348,7 @@ def crypto_usdt_page(order, usdt_amount):
                     callback_data=f"confirm_pay:{order['order_id']}",
                 )
             ],
-            [InlineKeyboardButton("💳 Kembali ke QRIS", callback_data=f"pay_qris:{order['order_id']}")],
+            [InlineKeyboardButton("🟡 Bayar via Binance ID", callback_data=f"pay_binance:{order['order_id']}")],
             [InlineKeyboardButton("⌂ Home", callback_data="home")],
         ]
     )
