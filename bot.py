@@ -579,7 +579,7 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
     if data == "checkjoin":
         is_member = await check_member(app.bot, query.from_user.id)
         if not is_member:
-            await query.answer("Kamu belum join channel. Silakan join dulu ya!", show_alert=True)
+            await query.answer("You haven't joined the channel yet. Please join first!", show_alert=True)
             return
         await asyncio.to_thread(sync.sync_from_sheets, True)
         name = query.from_user.first_name or query.from_user.username
@@ -729,7 +729,7 @@ async def do_checkout(query, context, chat_id, msg_id):
         qty = 1
     product = get_product(product_id)
     if not product:
-        text, kb = ui.error_page("Produk tidak ditemukan.")
+        text, kb = ui.error_page("Product not found.")
         await safe_edit(
             chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
         )
@@ -741,7 +741,7 @@ async def do_checkout(query, context, chat_id, msg_id):
         )
         return
 
-    text, kb = ui.loading_text("Membuat pesananmu...")
+    text, kb = ui.loading_text("Processing your order...")
     await safe_edit(
         chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
     )
@@ -756,8 +756,8 @@ async def do_checkout(query, context, chat_id, msg_id):
         return
     if db.count_pending_for_user(user.id) >= MAX_PENDING_ORDERS_PER_USER:
         text, kb = ui.error_page(
-            "Kamu punya terlalu banyak pesanan yang belum dibayar. "
-            "Selesaikan atau tunggu pesanan lama kedaluwarsa dulu ya."
+            "You have too many unpaid pending orders. "
+            "Please complete or wait for previous orders to expire."
         )
         await safe_edit(
             chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
@@ -835,13 +835,13 @@ async def do_checkout(query, context, chat_id, msg_id):
 async def process_binance_payment(query, context, chat_id, msg_id, order_id):
     order = db.get_order(order_id)
     if not order or str(order["telegram_id"]) != str(query.from_user.id):
-        await query.answer("Order tidak ditemukan.")
+        await query.answer("Order not found.")
         return
 
     total = order["total"]
     usdt_amount = await asyncio.to_thread(calculate_usdt, total)
     if not usdt_amount:
-        text, kb = ui.error_page("Gagal mengambil rate USDT. Coba lagi nanti.")
+        text, kb = ui.error_page("Failed to fetch live USDT rate. Please try again.")
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
         return
 
@@ -850,14 +850,14 @@ async def process_binance_payment(query, context, chat_id, msg_id, order_id):
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
     except Exception as e:
         logger.error("Binance payment error: %s", e)
-        text, kb = ui.error_page("Gagal menampilkan pembayaran Binance Pay.")
+        text, kb = ui.error_page("Failed to display Binance Pay page.")
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
 
 
 async def process_usdt_payment(query, context, chat_id, msg_id, order_id):
     order = db.get_order(order_id)
     if not order or str(order["telegram_id"]) != str(query.from_user.id):
-        await query.answer("Order tidak ditemukan.")
+        await query.answer("Order not found.")
         return
 
     product_id = order["product_id"]
@@ -865,13 +865,13 @@ async def process_usdt_payment(query, context, chat_id, msg_id, order_id):
     total = order["total"]
 
     if not config.CRYPTO_WALLET_USDT:
-        text, kb = ui.error_page("Crypto payment belum dikonfigurasi.")
+        text, kb = ui.error_page("Crypto payment is not configured.")
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
         return
 
     usdt_amount = await asyncio.to_thread(calculate_usdt, total)
     if not usdt_amount:
-        text, kb = ui.error_page("Gagal mengambil rate USDT. Coba lagi nanti.")
+        text, kb = ui.error_page("Failed to fetch live USDT rate. Please try again.")
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
         return
 
@@ -880,7 +880,7 @@ async def process_usdt_payment(query, context, chat_id, msg_id, order_id):
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
     except Exception as e:
         logger.error("Crypto payment error: %s", e)
-        text, kb = ui.error_page("Gagal menampilkan pembayaran crypto.")
+        text, kb = ui.error_page("Failed to display crypto payment page.")
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
 
 
@@ -888,11 +888,11 @@ async def paid_check(query, context, chat_id, msg_id):
     order_id = query.data.split(":", 1)[1]
     order = db.get_order(order_id)
     if not order:
-        text, kb = ui.error_page("Order tidak ditemukan.")
+        text, kb = ui.error_page("Order not found.")
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
         return
     if str(order["telegram_id"]) != str(query.from_user.id):
-        text, kb = ui.error_page("Order ini bukan milik kamu ya.")
+        text, kb = ui.error_page("This order does not belong to your account.")
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
         return
 
@@ -904,7 +904,7 @@ async def paid_check(query, context, chat_id, msg_id):
 
     elif order["status"] in ("PENDING", "FAILED") and config.PAYMENT_METHOD == "nevapedia":
         if not config.NEVAPEDIA_API_KEY:
-            text, kb = ui.error_page("Payment gateway belum dikonfigurasi.")
+            text, kb = ui.error_page("Payment gateway is not configured.")
             await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
             return
         try:
@@ -919,13 +919,13 @@ async def paid_check(query, context, chat_id, msg_id):
                 await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
         except Exception as e:
             logger.error("Status check error: %s", e)
-            text, kb = ui.error_page("Gagal cek status. Coba lagi nanti.")
+            text, kb = ui.error_page("Failed to check payment status. Please try again.")
             await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
             return
         order = db.get_order(order_id)
 
     if not order:
-        text, kb = ui.error_page("Order tidak ditemukan.")
+        text, kb = ui.error_page("Order not found.")
     elif order["status"] == "COMPLETED":
         if not order.get("delivered"):
             contents = db.get_stock_contents_by_order(order_id)
@@ -1013,15 +1013,15 @@ LEONARDO_AI_TERMS = (
 
 async def send_product_file(context, order, contents):
     file_text = (
-        f"PEMBAYARAN BERHASIL\n"
-        f"Order: {order['order_id']}\n"
-        f"Produk: {order['product_name']} x{order['qty']}\n"
+        f"PAYMENT SUCCESSFUL\n"
+        f"Order ID: {order['order_id']}\n"
+        f"Product: {order['product_name']} x{order['qty']}\n"
         f"Total: Rp{order['total']:,}\n"
-        f"Waktu: {db.utcnow().isoformat()}\n\n"
-        f"== PRODUK DIGITAL ==\n\n"
+        f"Timestamp: {db.utcnow().isoformat()}\n\n"
+        f"== DIGITAL PRODUCT ITEMS ==\n\n"
     )
     for i, content in enumerate(contents, 1):
-        file_text += f"Produk {i}:\n{content}\n\n"
+        file_text += f"Item {i}:\n{content}\n\n"
     file_text += GENERAL_TERMS
     if "google" in order["product_name"].lower():
         file_text += GOOGLE_AI_PRO_TERMS
@@ -1029,13 +1029,13 @@ async def send_product_file(context, order, contents):
         file_text += NETFLIX_VPN_TERMS
     if "leonardo ai" in order["product_name"].lower():
         file_text += LEONARDO_AI_TERMS
-    file_text += "Terima kasih sudah berbelanja!\n"
+    file_text += "Thank you for purchasing!\n"
     buf = io.BytesIO(file_text.encode("utf-8"))
-    buf.name = f"produk-{order['order_id']}.txt"
+    buf.name = f"product-{order['order_id']}.txt"
     await context.bot.send_document(
         chat_id=order["telegram_id"],
         document=InputFile(buf),
-        caption=f"📂 Produk digital kamu — Order <code>{order['order_id']}</code>",
+        caption=f"📂 Your digital product — Order <code>{order['order_id']}</code>",
         parse_mode="HTML",
     )
 
@@ -1095,16 +1095,16 @@ async def complete_order(order_id, payment_id, context):
                 await notify_affiliate(referrer, commission, order_id)
 
     intro = (
-        f"✓ <b>Pembayaran Berhasil!</b>\n\n"
-        + ("🧪 <i>Mode uji coba — pembayaran disimulasikan.</i>\n\n" if config.TEST_MODE else "")
+        f"✓ <b>Payment Successful!</b>\n\n"
+        + ("🧪 <i>Test mode — simulated payment.</i>\n\n" if config.TEST_MODE else "")
         + f"🛍️ {ui.esc(order['product_name'])} x{order['qty']}\n"
-        f"🧾 <code>{order_id}</code>\n\n"
+        f"🧾 Order ID: <code>{order_id}</code>\n\n"
     )
 
     try:
         await context.bot.send_message(
             chat_id=order["telegram_id"],
-            text=intro + "Silakan ambil akses produk kamu di file terlampir 👇",
+            text=intro + "Your digital product is attached in the file below 👇",
             parse_mode="HTML",
         )
     except Exception as e:
@@ -1117,15 +1117,15 @@ async def complete_order(order_id, payment_id, context):
     except Exception as e:
         logger.error("Kirim file produk gagal: %s", e)
     await notify_admin(
-        f"✅ <b>PEMBAYARAN BERHASIL</b>\n\n"
+        f"✅ <b>ORDER COMPLETED</b>\n\n"
         f"🆔 Order <code>{order_id}</code>\n"
         f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
         f"💰 Total: <b>Rp{order['total']:,}</b>\n"
         f"👤 User: {order['telegram_id']}\n"
-        f"📦 Status: <b>COMPLETED</b>{' ⚠️ file GAGAL dikirim' if not delivered else ''}"
+        f"📦 Status: <b>COMPLETED</b>{' ⚠️ delivery failed' if not delivered else ''}"
     )
     await notify_channel(
-        f"✅ <b>PENJUALAN BARU</b>\n\n"
+        f"✅ <b>NEW PURCHASE</b>\n\n"
         f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
         f"💰 Total: <b>Rp{order['total']:,}</b>\n"
         f"📦 Status: <b>COMPLETED</b>"
@@ -1136,13 +1136,13 @@ async def complete_order(order_id, payment_id, context):
 async def confirm_payment(query, context, order_id):
     order = db.get_order(order_id)
     if not order or str(order["telegram_id"]) != str(query.from_user.id):
-        await query.answer("Order tidak ditemukan.")
+        await query.answer("Order not found.")
         return
     if order["status"] != "PENDING":
-        await query.answer("Status pesanan sudah berubah.")
+        await query.answer("Order status has already updated.")
         return
     if config.PAYMENT_METHOD == "nevapedia" or order.get("payment_id"):
-        await query.answer("Order ini tidak memakai verifikasi manual.")
+        await query.answer("This order does not require manual verification.")
         return
     db.set_order_status(order_id, "AWAITING_ADMIN")
     await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
@@ -1150,9 +1150,9 @@ async def confirm_payment(query, context, order_id):
         [[InlineKeyboardButton("⌂ Home", callback_data="home")]]
     )
     caption = (
-        f"⏳ <b>Pembayaran Diverifikasi</b>\n\n"
-        f"Terima kasih! Pembayaran kamu sedang diperiksa admin.\n"
-        f"Produk dikirim otomatis setelah disetujui. 🙏"
+        f"⏳ <b>Payment Submitted for Verification</b>\n\n"
+        f"Thank you! Your payment is currently being reviewed by admin.\n"
+        f"Product will be delivered automatically upon approval. 🙏"
     )
     try:
         await query.edit_message_caption(caption=caption, parse_mode="HTML", reply_markup=kb)
@@ -1163,7 +1163,7 @@ async def confirm_payment(query, context, order_id):
                 await query.message.reply_text(caption, parse_mode="HTML", reply_markup=kb)
             except Exception:
                 pass
-    await query.answer("Terima kasih! ✅")
+    await query.answer("Thank you! ✅")
     await notify_admin_pending_verification(order_id)
 
 
@@ -1202,22 +1202,22 @@ async def notify_admin_pending_verification(order_id):
 
 async def admin_approve(query, context, chat_id, msg_id, order_id):
     if config.ADMIN_CHAT_ID is None or str(query.from_user.id) != str(config.ADMIN_CHAT_ID):
-        await query.answer("Hanya admin yang bisa approve.")
+        await query.answer("Admin only.")
         return
     order = db.get_order(order_id)
     if not order:
-        await query.answer("Order tidak ditemukan.")
+        await query.answer("Order not found.")
         return
     if order["status"] != "AWAITING_ADMIN":
-        await query.answer("Status order bukan menunggu verifikasi.")
+        await query.answer("Order is not awaiting verification.")
         return
     await complete_order(order_id, order_id, context)
-    await query.answer("Disetujui.")
+    await query.answer("Approved.")
     try:
         await safe_edit(
             chat_id=chat_id,
             message_id=msg_id,
-            text=f"✅ <b>Order disetujui.</b>\nProduk untuk <code>{order_id}</code> sudah dikirim.",
+            text=f"✅ <b>Order approved.</b>\nProducts for <code>{order_id}</code> have been sent.",
             reply_markup=InlineKeyboardMarkup([]),
         )
     except Exception:
@@ -1226,14 +1226,14 @@ async def admin_approve(query, context, chat_id, msg_id, order_id):
 
 async def admin_reject(query, context, chat_id, msg_id, order_id):
     if config.ADMIN_CHAT_ID is None or str(query.from_user.id) != str(config.ADMIN_CHAT_ID):
-        await query.answer("Hanya admin yang bisa reject.")
+        await query.answer("Admin only.")
         return
     order = db.get_order(order_id)
     if not order:
-        await query.answer("Order tidak ditemukan.")
+        await query.answer("Order not found.")
         return
     if order["status"] != "AWAITING_ADMIN":
-        await query.answer("Status order bukan menunggu verifikasi.")
+        await query.answer("Order is not awaiting verification.")
         return
     db.release_reservation(order_id)
     db.set_order_status(order_id, "FAILED")
@@ -1241,17 +1241,17 @@ async def admin_reject(query, context, chat_id, msg_id, order_id):
     try:
         await context.bot.send_message(
             chat_id=order["telegram_id"],
-            text="❌ Pembayaran kamu tidak terverifikasi. Jika sudah transfer, hubungi admin.",
+            text="❌ Your payment could not be verified. If you already transferred, please contact admin.",
             parse_mode="HTML",
         )
     except Exception as e:
         logger.error("Notif reject ke user gagal: %s", e)
-    await query.answer("Ditolak.")
+    await query.answer("Rejected.")
     try:
         await safe_edit(
             chat_id=chat_id,
             message_id=msg_id,
-            text=f"❌ <b>Order ditolak.</b>\n<code>{order_id}</code> dibatalkan.",
+            text=f"❌ <b>Order rejected.</b>\n<code>{order_id}</code> was cancelled.",
             reply_markup=InlineKeyboardMarkup([]),
         )
     except Exception:
@@ -1492,18 +1492,20 @@ async def notify_channel(text):
 
 async def setup_commands(application):
     user_cmds = [
-        BotCommand("start", "Mulai Bot"),
-        BotCommand("stock", "Cek Stok"),
-        BotCommand("promo", "Promo"),
+        BotCommand("start", "Start Bot"),
+        BotCommand("products", "Browse Catalog"),
+        BotCommand("stock", "Live Stock"),
+        BotCommand("promo", "Special Offers"),
+        BotCommand("orders", "My Orders"),
         BotCommand("join", "Join Channel"),
-        BotCommand("support", "Support"),
-        BotCommand("affiliate", "Program Afiliasi"),
+        BotCommand("support", "Support & Help"),
+        BotCommand("affiliate", "Affiliate Program"),
     ]
     admin_cmds = user_cmds + [
-        BotCommand("admin", "Dashboard admin"),
-        BotCommand("addstock", "Tambah stok produk"),
-        BotCommand("affiliates", "Daftar komisi"),
-        BotCommand("payout", "Cairkan komisi"),
+        BotCommand("admin", "Admin Dashboard"),
+        BotCommand("addstock", "Add Stock Items"),
+        BotCommand("affiliates", "Affiliate Wallets"),
+        BotCommand("payout", "Payout Commission"),
     ]
     try:
         await application.bot.set_my_commands(user_cmds, scope=BotCommandScopeDefault())
@@ -1529,40 +1531,40 @@ async def post_init(application):
 async def join_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     channel = (config.CHANNEL_USERNAME or "").strip().lstrip("@")
     if not channel:
-        await update.message.reply_text("Channel belum dikonfigurasi.")
+        await update.message.reply_text("Channel is not configured.")
         return
     kb = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("Join Channel", url=f"https://t.me/{channel}")]]
+        [[InlineKeyboardButton("📢 Join Channel", url=f"https://t.me/{channel}")]]
     )
     await update.message.reply_text(
-        "Gabung dulu di channel kami untuk update promo & info produk terbaru 👇",
+        "Please join our channel for updates, discounts, and latest restocks 👇",
         reply_markup=kb,
     )
 
 
 async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
-        "🛟 <b>Butuh Bantuan?</b>\n\n"
-        "Untuk pertanyaan, kendala pembayaran, atau bantuan produk, silakan hubungi admin kami. "
-        "Kami siap membantu! 🙏"
+        "🛟 <b>Need Assistance?</b>\n\n"
+        "For questions, order issues, or product inquiries, please contact our support admin. "
+        "We are happy to help! 🙏"
     )
     buttons = []
     if config.CHANNEL_USERNAME:
         buttons.append(
             [
                 InlineKeyboardButton(
-                    "Join Channel", url=f"https://t.me/{config.CHANNEL_USERNAME.lstrip('@')}"
+                    "📢 Join Channel", url=f"https://t.me/{config.CHANNEL_USERNAME.lstrip('@')}"
                 )
             ]
         )
     admin_user = db.get_setting("ADMIN_USERNAME", "").strip().lstrip("@")
     if admin_user:
         buttons.append(
-            [InlineKeyboardButton("💬 Chat Admin", url=f"https://t.me/{admin_user}")]
+            [InlineKeyboardButton("💬 Contact Support", url=f"https://t.me/{admin_user}")]
         )
     elif config.ADMIN_CHAT_ID is not None:
         buttons.append(
-            [InlineKeyboardButton("💬 Chat Admin", url=f"tg://user?id={config.ADMIN_CHAT_ID}")]
+            [InlineKeyboardButton("💬 Contact Support", url=f"tg://user?id={config.ADMIN_CHAT_ID}")]
         )
     if buttons:
         await update.message.reply_text(
