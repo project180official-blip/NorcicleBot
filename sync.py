@@ -178,16 +178,46 @@ def sync_from_sheets(force=False):
     try:
         _last_sync_done = time.monotonic()
         for row in fetch_csv(config.PRODUCTS_URL):
-            if not row.get("ID"):
+            # Cari kolom ID meskipun nama header ada spasi/tambahan teks
+            raw_id = row.get("ID")
+            if not raw_id:
+                for k, v in row.items():
+                    if k and k.strip().upper().startswith("ID"):
+                        raw_id = v if v else k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else ""
+                        break
+            if not raw_id:
                 continue
+
+            name = row.get("NAME") or ""
+            emoji = row.get("EMOJI") or "📦"
+            price_raw = row.get("PRICE") or 0
+            status = row.get("STATUS") or "ACTIVE"
+            desc = row.get("DESCRIPTION") or ""
+
+            # Fallback jika header baris 1 tergabung dengan data baris 1
+            for k, v in row.items():
+                if not k:
+                    continue
+                ku = k.strip().upper()
+                if ku.startswith("NAME") and not name:
+                    name = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else "")
+                elif ku.startswith("EMOJI") and emoji == "📦":
+                    emoji = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else "📦")
+                elif ku.startswith("PRICE") and not price_raw:
+                    price_raw = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else 0)
+                elif ku.startswith("STATUS") and status == "ACTIVE":
+                    status = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else "ACTIVE")
+                elif ku.startswith("DESC") and not desc:
+                    desc = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else "")
+
             db.upsert_product(
                 {
-                    "id": str(row["ID"]).strip(),
-                    "name": row.get("NAME", ""),
-                    "emoji": row.get("EMOJI", ""),
-                    "price": _parse_price(row.get("PRICE")),
-                    "status": str(row.get("STATUS", "")).strip().upper(),
-                    "description": row.get("DESCRIPTION", ""),
+                    "id": str(raw_id).strip(),
+                    "name": str(name).strip(),
+                    "emoji": str(emoji).strip(),
+                    "price": _parse_price(price_raw),
+                    "status": str(status).strip().upper(),
+                    "description": str(desc).strip(),
                 }
             )
         stock_rows = fetch_csv(config.STOCK_URL)

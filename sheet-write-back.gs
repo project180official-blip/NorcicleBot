@@ -69,6 +69,10 @@ function doPost(e) {
       var result = addStock(body.add_stock);
       return HtmlService.createHtmlOutput('OK:' + JSON.stringify(result));
     }
+    if (body.fix_sheets === true) {
+      fixSheetsStructure();
+      return HtmlService.createHtmlOutput('OK_FIXED');
+    }
     return HtmlService.createHtmlOutput('INVALID');
   } catch (err) {
     console.error(err);
@@ -198,6 +202,34 @@ function resetStock(ids) {
     n++;
   }
   console.log('Reset selesai: ' + n + ' baris direset.');
+}
+
+function fixSheetsStructure() {
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
+  
+  // 1. Perbaiki PRODUCTS
+  let shProd = ss.getSheetByName('PRODUCTS');
+  if (shProd) {
+    const pData = shProd.getDataRange().getValues();
+    shProd.clear();
+    shProd.appendRow(['ID', 'NAME', 'EMOJI', 'PRICE', 'STATUS', 'DESCRIPTION']);
+    shProd.appendRow(['P0001', 'Gemini AI Pro 18Month', '📦', 0.8, 'ACTIVE', 'Gemini AI Pro 18Month']);
+    shProd.appendRow(['P0002', 'HBO MAX 3 MONTH', '📽️', 2.0, 'ACTIVE', 'HBO MAX 3 MONTH']);
+  }
+
+  // 2. Perbaiki STOCK baris HBO
+  let shStock = ss.getSheetByName('STOCK');
+  if (shStock) {
+    const sData = shStock.getDataRange().getValues();
+    for (let i = 1; i < sData.length; i++) {
+      const content = String(sData[i][2] || '');
+      if (content.includes('jaymen6711022003@hotmail.com')) {
+        shStock.getRange(i + 1, 1).setValue('S0111');
+        shStock.getRange(i + 1, 2).setValue('P0002');
+        shStock.getRange(i + 1, 4).setValue('AVAILABLE');
+      }
+    }
+  }
 }
 
 // Fungsi inisialisasi untuk membuat 4 sheet otomatis dengan header lengkap.
