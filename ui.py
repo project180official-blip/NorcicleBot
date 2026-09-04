@@ -52,27 +52,38 @@ def home_text(user_name=None):
     products = db.get_active_products()
     name_str = f", <b>{esc(user_name)}</b>" if user_name else ""
 
+    items_list = []
+    for i, p in enumerate(products, 1):
+        avail = db.count_available(p["id"])
+        stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
+        items_list.append(
+            f"<b>{i}. {p['emoji']} {esc(p['name'])}</b>\n"
+            f"   └ 💵 <b>{fmt_price(p['price'])}</b>  |  {stock_badge}"
+        )
+
+    product_block = "\n\n".join(items_list) if items_list else "No products currently available."
+
     text = (
         f"👑 <b>WELCOME TO {BRAND} STORE</b>{name_str}\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"⚡ <i>Instant Delivery • 100% Automated • 24/7</i>\n\n"
-        f"🔥 <b>Featured Digital Products:</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━"
+        f"🔥 <b>Featured Products:</b>\n\n"
+        f"{product_block}\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"<i>Select a product to purchase below:</i>"
     )
 
     rows = []
-    # Baris tombol produk bergaya Storefront Premium
-    for p in products:
-        avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 Sold"
+    # Baris tombol produk terstruktur
+    for i, p in enumerate(products, 1):
         rows.append([
             InlineKeyboardButton(
-                f"{p['emoji']} {esc(p['name'])} — {fmt_price(p['price'])} [{stock_badge}]",
+                f"🛍️ Buy #{i}: {esc(p['name'])}",
                 callback_data=f"product:{p['id']}"
             )
         ])
 
-    # Navigasi Menu Elegan
+    # Navigasi Menu
     rows.append([
         InlineKeyboardButton("📦 Live Stock", callback_data="stock"),
         InlineKeyboardButton("🧾 My Orders", callback_data="orders"),
@@ -133,20 +144,28 @@ def catalog_text():
         )
         return text, keyboard
 
+    items_list = []
+    for i, p in enumerate(products, 1):
+        avail = db.count_available(p["id"])
+        stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
+        items_list.append(
+            f"<b>{i}. {p['emoji']} {esc(p['name'])}</b>\n"
+            f"   └ 💵 <b>{fmt_price(p['price'])}</b>  |  {stock_badge}"
+        )
+
     text = (
-        f"🛍️ <b>SELECT A PRODUCT</b>\n"
+        f"🛍️ <b>PRODUCT CATALOG</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"{chr(10).join(items_list)}\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"Tap any product below to view details and order:\n"
-        f"━━━━━━━━━━━━━━━━━━━━"
+        f"<i>Select a product to view details & purchase:</i>"
     )
 
     rows = []
-    for p in products:
-        avail = db.count_available(p["id"])
-        stock_text = f"🟢 {avail} in stock" if avail > 0 else "🔴 Sold out"
+    for i, p in enumerate(products, 1):
         rows.append([
             InlineKeyboardButton(
-                f"{p['emoji']} {esc(p['name'])} — {fmt_price(p['price'])} ({stock_text})",
+                f"🛍️ Buy #{i}: {esc(p['name'])}",
                 callback_data=f"product:{p['id']}"
             )
         ])
