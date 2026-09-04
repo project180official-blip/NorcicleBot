@@ -1,0 +1,6 @@
+store.db
+store.db-*
+__pycache__/
+*.pyc
+.env
+admin_id.txt
