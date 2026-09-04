@@ -178,13 +178,28 @@ def sync_from_sheets(force=False):
     try:
         _last_sync_done = time.monotonic()
         for row in fetch_csv(config.PRODUCTS_URL):
-            # Cari kolom ID meskipun nama header ada spasi/tambahan teks
+            # Cek jika baris 1 adalah header tergabung (misal: 'ID P0001', 'PRICE 0.8')
+            first_key_id = next((k for k in row.keys() if k and k.strip().upper().startswith("ID")), None)
+            if first_key_id and len(first_key_id.split(None, 1)) > 1:
+                # Daftarkan produk dari nama header baris 1 jika belum ada
+                h_id = first_key_id.split(None, 1)[1].strip()
+                h_name = next((k.split(None, 1)[1].strip() for k in row.keys() if k and k.strip().upper().startswith("NAME") and len(k.split(None, 1)) > 1), h_id)
+                h_emoji = next((k.split(None, 1)[1].strip() for k in row.keys() if k and k.strip().upper().startswith("EMOJI") and len(k.split(None, 1)) > 1), "📦")
+                h_price = next((k.split(None, 1)[1].strip() for k in row.keys() if k and k.strip().upper().startswith("PRICE") and len(k.split(None, 1)) > 1), 0)
+                h_status = next((k.split(None, 1)[1].strip() for k in row.keys() if k and k.strip().upper().startswith("STATUS") and len(k.split(None, 1)) > 1), "ACTIVE")
+                h_desc = next((k.split(None, 1)[1].strip() for k in row.keys() if k and k.strip().upper().startswith("DESC") and len(k.split(None, 1)) > 1), h_name)
+                db.upsert_product({
+                    "id": h_id,
+                    "name": h_name,
+                    "emoji": h_emoji,
+                    "price": _parse_price(h_price),
+                    "status": h_status.upper(),
+                    "description": h_desc,
+                })
+
             raw_id = row.get("ID")
-            if not raw_id:
-                for k, v in row.items():
-                    if k and k.strip().upper().startswith("ID"):
-                        raw_id = v if v else k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else ""
-                        break
+            if not raw_id and first_key_id:
+                raw_id = row.get(first_key_id)
             if not raw_id:
                 continue
 
@@ -194,21 +209,20 @@ def sync_from_sheets(force=False):
             status = row.get("STATUS") or "ACTIVE"
             desc = row.get("DESCRIPTION") or ""
 
-            # Fallback jika header baris 1 tergabung dengan data baris 1
             for k, v in row.items():
                 if not k:
                     continue
                 ku = k.strip().upper()
                 if ku.startswith("NAME") and not name:
-                    name = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else "")
+                    name = v
                 elif ku.startswith("EMOJI") and emoji == "📦":
-                    emoji = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else "📦")
-                elif ku.startswith("PRICE") and not price_raw:
-                    price_raw = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else 0)
+                    emoji = v or "📦"
+                elif ku.startswith("PRICE"):
+                    price_raw = v
                 elif ku.startswith("STATUS") and status == "ACTIVE":
-                    status = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else "ACTIVE")
+                    status = v or "ACTIVE"
                 elif ku.startswith("DESC") and not desc:
-                    desc = v or (k.split(None, 1)[1] if len(k.split(None, 1)) > 1 else "")
+                    desc = v
 
             db.upsert_product(
                 {
