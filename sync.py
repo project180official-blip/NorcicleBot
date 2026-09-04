@@ -25,11 +25,15 @@ def fetch_csv(url):
 
 
 def _parse_price(raw):
-    s = re.sub(r"[^\d]", "", str(raw or ""))
-    try:
-        return int(s) if s else 0
-    except ValueError:
-        return 0
+    s = str(raw or "").strip().replace("$", "").replace(",", "")
+    match = re.search(r"[-+]?\d*\.?\d+", s)
+    if match:
+        try:
+            val = float(match.group())
+            return int(val) if val.is_integer() else val
+        except ValueError:
+            return 0
+    return 0
 
 
 def restore_inflight_orders():

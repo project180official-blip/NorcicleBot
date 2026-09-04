@@ -778,10 +778,10 @@ async def do_checkout(query, context, chat_id, msg_id):
             reply_markup=kb,
         )
         await notify_admin(
-            f"🔔 <b>PESANAN BARU (TEST)</b>\n"
+            f"🔔 <b>NEW ORDER (TEST)</b>\n"
             f"🆔 Order: <code>{order_id}</code>\n"
             f"{product['emoji']} {ui.esc(product['name'])} x{qty}\n"
-            f"💰 Total: <b>Rp{total:,}</b>\n"
+            f"💰 Total: <b>{ui.fmt_price(total)}</b>\n"
             f"👤 User: @{user.username or '-'} ({user.id})"
         )
         return
@@ -796,16 +796,16 @@ async def do_checkout(query, context, chat_id, msg_id):
         return
 
     try:
-        usdt_amount = await asyncio.to_thread(calculate_usdt, total)
+        usdt_amount = total
         text, kb = ui.payment_method_page(order, usdt_amount)
         await safe_edit(
             chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
         )
         await notify_admin(
-            f"🔔 <b>PESANAN BARU</b>\n\n"
+            f"🔔 <b>NEW ORDER</b>\n\n"
             f"🆔 Order: <code>{order_id}</code>\n"
             f"{product['emoji']} {ui.esc(product['name'])} x{qty}\n"
-            f"💰 Total: <b>Rp{total:,}</b> (Est: {usdt_amount:.2f} USDT)\n"
+            f"💰 Total: <b>{ui.fmt_price(total)}</b> ({usdt_amount:.2f} USDT)\n"
             f"👤 User: @{user.username or '-'} ({user.id})"
         )
     except Exception as e:
@@ -839,11 +839,7 @@ async def process_binance_payment(query, context, chat_id, msg_id, order_id):
         return
 
     total = order["total"]
-    usdt_amount = await asyncio.to_thread(calculate_usdt, total)
-    if not usdt_amount:
-        text, kb = ui.error_page("Failed to fetch live USDT rate. Please try again.")
-        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
-        return
+    usdt_amount = float(total)
 
     try:
         text, kb = ui.binance_pay_page(order, usdt_amount)
@@ -869,11 +865,7 @@ async def process_usdt_payment(query, context, chat_id, msg_id, order_id):
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
         return
 
-    usdt_amount = await asyncio.to_thread(calculate_usdt, total)
-    if not usdt_amount:
-        text, kb = ui.error_page("Failed to fetch live USDT rate. Please try again.")
-        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
-        return
+    usdt_amount = float(total)
 
     try:
         text, kb = ui.crypto_usdt_page(order, usdt_amount)

@@ -21,7 +21,13 @@ def header(title=None):
 
 
 def fmt_price(n):
-    return f"Rp{n:,}"
+    try:
+        val = float(n or 0)
+        if val.is_integer():
+            return f"${int(val)}"
+        return f"${val:.2f}"
+    except (ValueError, TypeError):
+        return f"${n}"
 
 
 def force_join_page():
@@ -261,11 +267,11 @@ def loading_text(msg="Processing your order..."):
 
 
 def payment_method_page(order, usdt_amount=None):
-    usdt_line = f"\n💲 Est. Crypto: <b>{usdt_amount:.2f} USDT</b>" if usdt_amount else ""
+    amt = float(usdt_amount if usdt_amount is not None else order['total'])
     text = (
         f"{header('<b>💳 Payment Method</b>')}\n\n"
         f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
-        f"💰 Total: <b>{fmt_price(order['total'])}</b>{usdt_line}\n"
+        f"💰 Total: <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
         f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
         f"Please select your payment method 👇"
     )
@@ -279,20 +285,21 @@ def payment_method_page(order, usdt_amount=None):
     return text, InlineKeyboardMarkup(buttons)
 
 
-def binance_pay_page(order, usdt_amount):
+def binance_pay_page(order, usdt_amount=None):
     pay_id = config.BINANCE_PAY_ID
+    amt = float(usdt_amount if usdt_amount is not None else order['total'])
     text = (
         f"{header('<b>🟡 Binance Pay Payment</b>')}\n\n"
         f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
         f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
         f"💰 Total: <b>{fmt_price(order['total'])}</b>\n"
-        f"💲 Exact Amount: <b>{usdt_amount:.2f} USDT</b>\n\n"
+        f"💲 Exact Amount: <b>{amt:.2f} USDT</b>\n\n"
         f"📲 <b>Send to Binance ID:</b>\n"
         f"<code>{pay_id}</code>\n\n"
         f"<b>Transfer Steps:</b>\n"
         f"1. Open Binance App -> Pay / Send\n"
         f"2. Enter Binance ID: <code>{pay_id}</code>\n"
-        f"3. Send exactly <b>{usdt_amount:.2f} USDT</b>\n"
+        f"3. Send exactly <b>{amt:.2f} USDT</b>\n"
         f"4. Add Order ID to notes: <code>{order['order_id']}</code>\n\n"
         f"After transferring, click <b>✅ I Have Paid</b> below 👇"
     )
@@ -317,18 +324,19 @@ def binance_pay_page(order, usdt_amount):
     return text, keyboard
 
 
-def crypto_usdt_page(order, usdt_amount):
+def crypto_usdt_page(order, usdt_amount=None):
     wallet = config.CRYPTO_WALLET_USDT
+    amt = float(usdt_amount if usdt_amount is not None else order['total'])
     text = (
         f"{header('<b>💳 USDT Payment (BEP20)</b>')}\n\n"
         f"🛍️ {esc(order['product_name'])} × {order['qty']}\n"
         f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
         f"💰 Total: <b>{fmt_price(order['total'])}</b>\n"
-        f"💲 Exact Amount: <b>{usdt_amount:.2f} USDT</b>\n\n"
+        f"💲 Exact Amount: <b>{amt:.2f} USDT</b>\n\n"
         f"📩 <b>Wallet Address (BEP20 / BSC):</b>\n"
         f"<code>{wallet}</code>\n\n"
         f"⚠️ <b>IMPORTANT:</b>\n"
-        f"> Send exactly <b>{usdt_amount:.2f} USDT</b>\n"
+        f"> Send exactly <b>{amt:.2f} USDT</b>\n"
         f"> Ensure network is <b>BEP20 (BSC)</b>\n"
         f"> Do not send any other tokens!\n\n"
         f"After transferring, click <b>✅ I Have Paid</b> below 👇\n\n"

@@ -210,7 +210,7 @@ function setupSheets() {
   if (!shProd) shProd = ss.insertSheet('PRODUCTS');
   if (shProd.getLastRow() === 0) {
     shProd.appendRow(['ID', 'NAME', 'EMOJI', 'PRICE', 'STATUS', 'DESCRIPTION']);
-    shProd.appendRow(['P0001', 'Produk Contoh', '📦', 10000, 'ACTIVE', 'Deskripsi produk contoh']);
+    shProd.appendRow(['P0001', 'Sample Product', '📦', 5.0, 'ACTIVE', 'Sample digital product description']);
   }
 
   // 2. STOCK
@@ -218,7 +218,7 @@ function setupSheets() {
   if (!shStock) shStock = ss.insertSheet('STOCK');
   if (shStock.getLastRow() === 0) {
     shStock.appendRow(['STOCK_ID', 'PRODUCT_ID', 'CONTENT', 'STATUS', 'SOLD_TO']);
-    shStock.appendRow(['S0001', 'P0001', 'AKUN-CONTOH-1', 'AVAILABLE', '']);
+    shStock.appendRow(['S0001', 'P0001', 'SAMPLE-ACCOUNT-CREDENTIAL', 'AVAILABLE', '']);
   }
 
   // 3. SETTINGS
@@ -229,7 +229,7 @@ function setupSheets() {
     shSet.appendRow(['STORE_NAME', 'Norcicle Shop']);
     shSet.appendRow(['BOT_USERNAME', 'NorcicleBot']);
     shSet.appendRow(['ADMIN_USERNAME', 'saldihere']);
-    shSet.appendRow(['CURRENCY', 'IDR']);
+    shSet.appendRow(['CURRENCY', 'USD']);
   }
 
   // 4. ORDERS

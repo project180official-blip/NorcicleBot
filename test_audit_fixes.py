@@ -151,11 +151,11 @@ def test_mark_payout_rowcount():
 
 
 def test_parse_price_variants():
-    assert sync._parse_price("15000") == 15000
-    assert sync._parse_price("1.500") == 1500
-    assert sync._parse_price("Rp10.000") == 10000
+    assert sync._parse_price("15") == 15
+    assert sync._parse_price("1.5") == 1.5
+    assert sync._parse_price("$10.50") == 10.5
     assert sync._parse_price("15,000") == 15000
-    assert sync._parse_price("Rp 5.000") == 5000
+    assert sync._parse_price("$5") == 5
     assert sync._parse_price("") == 0
     assert sync._parse_price("abc") == 0
 
