@@ -117,7 +117,68 @@ def nevapedia_is_paid(status):
     return status in ("paid", "success", "completed", "settled")
 
 
-def fetch_usdt_idr_rate():
+import hmac
+import hashlib
+import urllib.parse
+
+
+def verify_binance_pay_transaction(order_id_target, expected_amount, tolerance_minutes=120):
+    """Cek transaksi masuk di Binance Pay via API key."""
+    if not config.BINANCE_API_KEY or not config.BINANCE_API_SECRET:
+        return {"ok": False, "reason": "NO_API_KEYS"}
+    
+    timestamp = int(time.time() * 1000)
+    # Cek transaksi dalam rentang beberapa jam terakhir
+    start_time = timestamp - (tolerance_minutes * 60 * 1000)
+    params = {
+        "timestamp": timestamp,
+        "startTime": start_time,
+        "limit": 50
+    }
+    query_str = urllib.parse.urlencode(params)
+    signature = hmac.new(
+        config.BINANCE_API_SECRET.encode("utf-8"),
+        query_str.encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+    
+    url = f"https://api.binance.com/sapi/v1/pay/transactions?{query_str}&signature={signature}"
+    headers = {"X-MBX-APIKEY": config.BINANCE_API_KEY}
+    
+    try:
+        resp = requests.get(url, headers=headers, timeout=15)
+        if not resp.ok:
+            logger.error("Binance Pay API error %s: %s", resp.status_code, resp.text)
+            return {"ok": False, "reason": f"API_ERROR_{resp.status_code}"}
+        
+        data = resp.json()
+        tx_list = data.get("data") or []
+        
+        # Cari transaksi masuk (deposit/receive) dengan order_id di note atau transaksi yang cocok nominalnya
+        target_oid = str(order_id_target).strip().upper()
+        for tx in tx_list:
+            # tx status: SUCCESS, orderType: C2C / PAY
+            note = str(tx.get("note") or "").upper()
+            order_id_field = str(tx.get("orderId") or "").upper()
+            amount = float(tx.get("amount") or 0)
+            currency = str(tx.get("currency") or "").upper()
+            
+            # Cocokkan jika note mengandung order ID atau txID
+            matched_id = target_oid in note or target_oid in order_id_field
+            matched_amount = amount >= float(expected_amount) and currency in ("USDT", "BUSD", "USDC")
+            
+            if matched_id and matched_amount:
+                return {
+                    "ok": True,
+                    "txId": tx.get("transactionId") or tx.get("orderId"),
+                    "amount": amount,
+                    "currency": currency
+                }
+        
+        return {"ok": False, "reason": "TRANSACTION_NOT_FOUND"}
+    except Exception as e:
+        logger.error("Error verifying Binance Pay: %s", e)
+        return {"ok": False, "reason": str(e)}
     try:
         resp = requests.get(
             "https://api.coingecko.com/api/v3/simple/price",
@@ -1172,7 +1233,31 @@ async def confirm_payment(query, context, order_id):
         await query.answer("Order status has already updated.")
         return
 
-    # Verifikasi keamanan manual oleh admin
+    # 1. Jika API Key Binance sudah diisi, lakukan verifikasi otomatis
+    if config.BINANCE_API_KEY and config.BINANCE_API_SECRET:
+        await query.answer("Checking Binance Pay ledger... ⏳")
+        verification = await asyncio.to_thread(
+            verify_binance_pay_transaction, order_id, order["total"]
+        )
+        if verification.get("ok"):
+            # Dana terverifikasi masuk di Binance! Langsung kirim produk
+            await complete_order(order_id, verification.get("txId") or order_id, context)
+            text, kb = ui.success_page(order_id)
+            if query.message:
+                if query.message.photo:
+                    try:
+                        await query.message.delete()
+                    except Exception:
+                        pass
+                    await app.bot.send_message(chat_id=query.message.chat_id, text=text, parse_mode="HTML", reply_markup=kb)
+                else:
+                    await safe_edit(chat_id=query.message.chat_id, message_id=query.message.message_id, text=text, reply_markup=kb)
+            return
+        elif verification.get("reason") == "TRANSACTION_NOT_FOUND":
+            await query.answer("Transaction not found yet. Please make sure you included Order ID in notes!", show_alert=True)
+            # Jangan langsung batalkan, beri tahu user untuk coba lagi atau submit ke admin
+
+    # 2. Fallback: Verifikasi manual oleh admin jika belum ada API key atau belum terdeteksi
     db.set_order_status(order_id, "AWAITING_ADMIN")
     await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
 

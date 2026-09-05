@@ -16,6 +16,8 @@ PAYMENT_METHOD = os.environ.get("PAYMENT_METHOD", "crypto").strip().lower()
 
 BINANCE_PAY_ID = os.environ.get("BINANCE_PAY_ID", "356095638").strip()
 BINANCE_QR_URL = os.environ.get("BINANCE_QR_URL", "https://i.ibb.co.com/Lh9133Lg/Whats-App-Image-2026-09-04-at-7-38-02-PM.jpg").strip()
+BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "").strip()
+BINANCE_API_SECRET = os.environ.get("BINANCE_API_SECRET", "").strip()
 CRYPTO_WALLET_USDT = os.environ.get("CRYPTO_WALLET_USDT", "0x5a3f4b292bd4269b82191ffae4dd14f1d0a75756").strip()
 
 AFFILIATE_PERCENT = int(os.environ.get("AFFILIATE_PERCENT", "5") or 0)
