@@ -5,7 +5,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CopyTextButton
 import config
 import db
 
-BRAND = "NORCICLE"
+BRAND = "SENTINELL"
 
 
 # Custom Animated Emoji IDs (Telegram Premium)
