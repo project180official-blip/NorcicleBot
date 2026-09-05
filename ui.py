@@ -120,7 +120,7 @@ def product_line(p):
         price_display = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
     else:
         price_display = fmt_price(p['price'])
-    return f"{icon} <b>{esc(p['name'])}</b>\n   └ 💵 <b>{price_display}</b>  •  {stock_badge}"
+    return f"{icon} <b>{esc(p['name'])}</b>\n   └ {price_display} • {stock_badge}"
 
 
 def home_text(user_name=None):
@@ -134,10 +134,10 @@ def home_text(user_name=None):
         pname = str(p.get("name", "")).lower()
         icon = get_product_icon(p)
         if p.get("id") == "P0001" or "gemini" in pname:
-            price_tag = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
+            price_tag = "$0.80"
         else:
             price_tag = fmt_price(p['price'])
-        prod_lines.append(f"{i}. {icon} <b>{esc(p['name'])}</b>\n   └ 💵 <b>{price_tag}</b> • {stock_badge}")
+        prod_lines.append(f"{i}. {icon} <b>{esc(p['name'])}</b>\n   └ {price_tag} • {stock_badge}")
 
     catalog_overview = "\n\n".join(prod_lines)
 
@@ -149,26 +149,31 @@ def home_text(user_name=None):
         f"<b>{EMOJI_CART} Live Vault Catalog:</b>\n"
         f"{catalog_overview}\n\n"
         f"────────────────────\n"
-        f"<i>Tap a product button below to buy:</i>"
+        f"<i>Select an item below to purchase:</i>"
     )
 
     rows = []
-    # Baris tombol produk rapi dengan aksen hijau premium
+    # Baris tombol grid 2 kolom rapi dan bersih
+    grid_row = []
     for i, p in enumerate(products, 1):
-        avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 0"
+        short_name = p['name'].replace("Pro", "").replace("Month", "M").replace("Pre 4K", "4K").strip()
         pname = str(p.get("name", "")).lower()
-        btn_icon = get_product_btn_icon(p)
         if p.get("id") == "P0001" or "gemini" in pname:
             price_tag = "$0.80"
         else:
             price_tag = fmt_price(p['price'])
-        rows.append([
+
+        grid_row.append(
             InlineKeyboardButton(
-                f"🟢 {btn_icon} Buy #{i}: {esc(p['name'])} • {price_tag} [{stock_badge}]",
+                f"🟢 {i}. {short_name} • {price_tag}",
                 callback_data=f"product:{p['id']}"
             )
-        ])
+        )
+        if len(grid_row) == 2:
+            rows.append(grid_row)
+            grid_row = []
+    if grid_row:
+        rows.append(grid_row)
 
     # Navigasi Menu
     rows.append([
@@ -243,7 +248,7 @@ def catalog_text():
             price_tag = fmt_price(p['price'])
         items_list.append(
             f"<b>{i}. {icon} {esc(p['name'])}</b>\n"
-            f"   └ 💵 <b>{price_tag}</b>  •  {stock_badge}"
+            f"   └ {price_tag} • {stock_badge}"
         )
 
     text = (
@@ -255,14 +260,27 @@ def catalog_text():
     )
 
     rows = []
+    grid_row = []
     for i, p in enumerate(products, 1):
-        btn_icon = get_product_btn_icon(p)
-        rows.append([
+        short_name = p['name'].replace("Pro", "").replace("Month", "M").replace("Pre 4K", "4K").strip()
+        pname = str(p.get("name", "")).lower()
+        if p.get("id") == "P0001" or "gemini" in pname:
+            price_tag = "$0.80"
+        else:
+            price_tag = fmt_price(p['price'])
+
+        grid_row.append(
             InlineKeyboardButton(
-                f"🟢 {btn_icon} Buy #{i}: {esc(p['name'])}",
+                f"🟢 {i}. {short_name} • {price_tag}",
                 callback_data=f"product:{p['id']}"
             )
-        ])
+        )
+        if len(grid_row) == 2:
+            rows.append(grid_row)
+            grid_row = []
+    if grid_row:
+        rows.append(grid_row)
+
     rows.append(
         [
             InlineKeyboardButton("📦 Live Vault", callback_data="stock"),
@@ -292,12 +310,12 @@ def product_page(product, qty):
         f"{esc(product['description'])}\n"
         f"{promo_badge}\n\n"
         f"────────────────────\n"
-        f"{EMOJI_DOLLAR} <b>Unit Price :</b> <b>{fmt_price(unit_price)}</b>\n"
+        f"💵 <b>Unit Price :</b> <b>{fmt_price(unit_price)}</b>\n"
         f"📦 <b>Vault Stock:</b> {stock_badge}\n"
         f"{EMOJI_CLOCK} <b>Fulfillment:</b> Instant Automated 24/7\n"
         f"────────────────────\n\n"
         f"🔢 <b>Quantity   :</b> <b>{qty}x</b>\n"
-        f"{EMOJI_MONEY} <b>Total Due  :</b> <b>{fmt_price(total)}</b>\n\n"
+        f"💰 <b>Total Due  :</b> <b>{fmt_price(total)}</b>\n\n"
         f"💡 <i>Tip: Adjust with [-] / [+] or send a number directly in chat.</i>"
     )
 
@@ -430,7 +448,7 @@ def payment_method_page(order, usdt_amount=None):
         f"────────────────────\n\n"
         f"{icon} <b>Item     :</b> {esc(order['product_name'])}\n"
         f"🔢 <b>Quantity :</b> {order['qty']}x\n"
-        f"{EMOJI_MONEY} <b>Total Due:</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
+        f"💰 <b>Total Due:</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
         f"🧾 <b>Order ID :</b> <code>{order['order_id']}</code>\n\n"
         f"────────────────────\n"
         f"Select your preferred crypto payment channel below:"
