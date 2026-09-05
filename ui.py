@@ -112,7 +112,7 @@ def home_text(user_name=None):
     )
 
     rows = []
-    # Baris tombol produk langsung rapi
+    # Baris tombol produk rapi dengan aksen hijau premium
     for i, p in enumerate(products, 1):
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 0"
@@ -124,22 +124,22 @@ def home_text(user_name=None):
             price_tag = fmt_price(p['price'])
         rows.append([
             InlineKeyboardButton(
-                f"{icon} {esc(p['name'])} • {price_tag} [{stock_badge}]",
+                f"🟢 {icon} {esc(p['name'])} • {price_tag} [{stock_badge}]",
                 callback_data=f"product:{p['id']}"
             )
         ])
 
     # Navigasi Menu
     rows.append([
-        InlineKeyboardButton("📦 Live Stock", callback_data="stock"),
-        InlineKeyboardButton("🧾 Orders", callback_data="orders"),
+        InlineKeyboardButton("📦 Live Vault", callback_data="stock"),
+        InlineKeyboardButton("🧾 Orders Log", callback_data="orders"),
     ])
     rows.append([
         InlineKeyboardButton("🤝 Affiliate (5%)", callback_data="affiliate"),
-        InlineKeyboardButton("💬 Support", callback_data="contact"),
+        InlineKeyboardButton("💬 Support Desk", callback_data="contact"),
     ])
     rows.append([
-        InlineKeyboardButton("🔄 Refresh", callback_data="refresh"),
+        InlineKeyboardButton("🔄 Refresh Store", callback_data="refresh"),
     ])
 
     return text, InlineKeyboardMarkup(rows)
@@ -218,14 +218,14 @@ def catalog_text():
         icon = get_product_icon(p)
         rows.append([
             InlineKeyboardButton(
-                f"{icon} Buy #{i}: {esc(p['name'])}",
+                f"🟢 {icon} Buy #{i}: {esc(p['name'])}",
                 callback_data=f"product:{p['id']}"
             )
         ])
     rows.append(
         [
-            InlineKeyboardButton("📦 Live Stock", callback_data="stock"),
-            InlineKeyboardButton("« Return to Menu", callback_data="home"),
+            InlineKeyboardButton("📦 Live Vault", callback_data="stock"),
+            InlineKeyboardButton("« Main Menu", callback_data="home"),
         ]
     )
     return text, InlineKeyboardMarkup(rows)
@@ -265,7 +265,7 @@ def product_page(product, qty):
             [InlineKeyboardButton("🔴 Out of Stock", callback_data="noop")],
             [
                 InlineKeyboardButton("« Catalog", callback_data="catalog"),
-                InlineKeyboardButton("« Home", callback_data="home"),
+                InlineKeyboardButton("« Menu", callback_data="home"),
             ],
         ]
     else:
@@ -276,12 +276,12 @@ def product_page(product, qty):
                 InlineKeyboardButton("➕", callback_data=f"qtyinc:{product['id']}"),
             ],
             [
-                InlineKeyboardButton("✏️ Enter Custom Qty", callback_data=f"customqty:{product['id']}"),
+                InlineKeyboardButton("✏️ Custom Quantity", callback_data=f"customqty:{product['id']}"),
             ],
-            [InlineKeyboardButton(f"⚡ Order Now • {fmt_price(total)}", callback_data=f"buy:{product['id']}")],
+            [InlineKeyboardButton(f"🟢 ⚡ Order Now • {fmt_price(total)}", callback_data=f"buy:{product['id']}")],
             [
                 InlineKeyboardButton("« Catalog", callback_data="catalog"),
-                InlineKeyboardButton("« Home", callback_data="home"),
+                InlineKeyboardButton("« Menu", callback_data="home"),
             ],
         ]
     return text, InlineKeyboardMarkup(rows)
@@ -396,8 +396,8 @@ def payment_method_page(order, usdt_amount=None):
     )
     buttons = [
         [
-            InlineKeyboardButton("🟡 Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}"),
-            InlineKeyboardButton("🌐 USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}"),
+            InlineKeyboardButton("🟢 🟡 Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}"),
+            InlineKeyboardButton("🟢 🌐 USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}"),
         ],
         [InlineKeyboardButton("« Cancel & Return", callback_data="home")],
     ]
@@ -435,7 +435,7 @@ def binance_pay_page(order, usdt_amount=None):
             ],
             [
                 InlineKeyboardButton(
-                    "✅ I Have Transferred",
+                    "🟢 ✅ I Have Transferred",
                     callback_data=f"confirm_pay:{order['order_id']}",
                 )
             ],
@@ -475,7 +475,7 @@ def crypto_usdt_page(order, usdt_amount=None):
             ],
             [
                 InlineKeyboardButton(
-                    "✅ I Have Transferred",
+                    "🟢 ✅ I Have Transferred",
                     callback_data=f"confirm_pay:{order['order_id']}",
                 )
             ],
