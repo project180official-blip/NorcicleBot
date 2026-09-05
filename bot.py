@@ -840,7 +840,7 @@ async def do_checkout(query, context, chat_id, msg_id):
         db.release_reservation(order_id)
         db.set_order_status(order_id, "FAILED")
         await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
-        text, kb = ui.error_page("Gagal membuat pembayaran. Admin akan menghubungi kamu.")
+        text, kb = ui.error_page("Payment creation failed. Admin will contact you.")
         try:
             await safe_edit(
                 chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
@@ -850,10 +850,10 @@ async def do_checkout(query, context, chat_id, msg_id):
                 chat_id=chat_id, text=text, reply_markup=kb
             )
         await notify_admin(
-            f"⚠️ <b>GAGAL BUAT PAYMENT</b>\n"
+            f"⚠️ <b>PAYMENT CREATION FAILED</b>\n"
             f"🆔 Order: <code>{order_id}</code>\n"
             f"{ui.esc(product['name'])} x{qty}\n"
-            f"💰 Total: Rp{total}\n"
+            f"💰 Total: {ui.fmt_price(total)}\n"
             f"👤 User: {user.id}\n"
             f"Error: {e}"
         )
@@ -1150,14 +1150,14 @@ async def complete_order(order_id, payment_id, context):
         f"✅ <b>ORDER COMPLETED</b>\n\n"
         f"🆔 Order <code>{order_id}</code>\n"
         f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
-        f"💰 Total: <b>Rp{order['total']:,}</b>\n"
+        f"💰 Total: <b>{ui.fmt_price(order['total'])}</b>\n"
         f"👤 User: {order['telegram_id']}\n"
         f"📦 Status: <b>COMPLETED</b>{' ⚠️ delivery failed' if not delivered else ''}"
     )
     await notify_channel(
         f"✅ <b>NEW PURCHASE</b>\n\n"
         f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
-        f"💰 Total: <b>Rp{order['total']:,}</b>\n"
+        f"💰 Total: <b>{ui.fmt_price(order['total'])}</b>\n"
         f"📦 Status: <b>COMPLETED</b>"
     )
     return "COMPLETED"
@@ -1212,12 +1212,12 @@ async def notify_admin_pending_verification(order_id):
         ]
     )
     text = (
-        f"🕐 <b>PEMBAYARAN MENUNGGU VERIFIKASI</b>\n\n"
+        f"🕐 <b>PAYMENT AWAITING VERIFICATION</b>\n\n"
         f"🆔 Order: <code>{order_id}</code>\n"
         f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
-        f"💰 Total: <b>Rp{order['total']:,}</b>\n"
+        f"💰 Total: <b>{ui.fmt_price(order['total'])}</b>\n"
         f"👤 User: {order['telegram_id']}\n\n"
-        f"Cek saldo yang masuk, lalu <b>Approve</b> atau <b>Reject</b>."
+        f"Verify the incoming payment, then click <b>Approve</b> or <b>Reject</b>."
     )
     try:
         await app.bot.send_message(
@@ -1322,11 +1322,11 @@ async def check_payments(context: ContextTypes.DEFAULT_TYPE):
 
 async def notify_affiliate(referrer_uid, amount, order_id):
     text = (
-        f"🎉 <b>Komisi Masuk!</b>\n\n"
-        f"Referralmu melakukan pembelian.\n"
+        f"🎉 <b>Commission Received!</b>\n\n"
+        f"Your referral completed a purchase.\n"
         f"🧾 Order: <code>{order_id}</code>\n"
-        f"💰 Komisi: <b>Rp{amount:,}</b>\n\n"
-        f"Cek saldo dengan /affiliate"
+        f"💰 Commission: <b>{ui.fmt_price(amount)}</b>\n\n"
+        f"Check your balance with /affiliate"
     )
     try:
         await app.bot.send_message(
@@ -1340,26 +1340,25 @@ def affiliate_text(uid):
     link = (
         f"https://t.me/{bot_username}?start=ref_{uid}"
         if bot_username
-        else "BOT_USERNAME belum terdeteksi"
+        else "BOT_USERNAME not detected yet"
     )
     balance = db.get_wallet(uid)
     refs = db.count_referrals(uid)
     text = (
-        f"🤝 <b>PROGRAM AFILIASI</b>\n\n"
-        f"Bagikan link di bawah ini. Kamu dapat komisi "
-        f"<b>{config.AFFILIATE_PERCENT}%</b> dari setiap pembelian "
-        f"berhasil lewat linkmu!\n\n"
+        f"🤝 <b>AFFILIATE PROGRAM</b>\n\n"
+        f"Share your link below to earn "
+        f"<b>{config.AFFILIATE_PERCENT}%</b> commission on every successful purchase!\n\n"
         f"🔗 <code>{link}</code>\n\n"
-        f"📊 Referral: <b>{refs}</b> orang\n"
-        f"💰 Saldo komisi: <b>Rp{balance:,}</b>\n\n"
-        f"Pencairan manual — hubungi admin ya."
+        f"📊 Referrals: <b>{refs}</b> users\n"
+        f"💰 Commission balance: <b>{ui.fmt_price(balance)}</b>\n\n"
+        f"Manual payout — please contact admin."
     )
     comms = db.get_commissions(uid, 5)
     if comms:
-        text += "\n\n🧾 <b>Komisi terakhir:</b>\n"
+        text += "\n\n🧾 <b>Recent Commissions:</b>\n"
         for c in comms:
-            status = "✅ dicairkan" if c["status"] == "PAID" else "⏳ pending"
-            text += f"• <code>{c['order_id']}</code> Rp{c['amount']:,} · {status}\n"
+            status = "✅ paid" if c["status"] == "PAID" else "⏳ pending"
+            text += f"• <code>{c['order_id']}</code> {ui.fmt_price(c['amount'])} · {status}\n"
     return text
 
 
@@ -1371,41 +1370,41 @@ async def affiliate_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def admin_affiliates_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if config.ADMIN_CHAT_ID is None or str(update.effective_user.id) != str(config.ADMIN_CHAT_ID):
-        await update.message.reply_text("Khusus admin.")
+        await update.message.reply_text("Admin only.")
         return
     rows = db.get_all_wallets()
     if not rows:
-        await update.message.reply_text("Belum ada komisi tercatat.")
+        await update.message.reply_text("No recorded commissions yet.")
         return
-    text = "🤝 <b>DAFTAR REFERRER & KOMISI</b>\n\n"
+    text = "🤝 <b>AFFILIATE & COMMISSION LEDGER</b>\n\n"
     for i, w in enumerate(rows, 1):
         text += (
             f"{i}. UID <code>{w['uid']}</code>\n"
-            f"   👥 {w['referrals']} ref · 🧾 {w['total_comm']} komisi · "
-            f"💰 <b>Rp{w['balance']:,}</b>\n"
+            f"   👥 {w['referrals']} ref · 🧾 {w['total_comm']} comms · "
+            f"💰 <b>{ui.fmt_price(w['balance'])}</b>\n"
         )
-    text += "\nCairkan: /payout &lt;uid&gt;"
+    text += "\nPayout: /payout &lt;uid&gt;"
     await update.message.reply_text(text, parse_mode="HTML")
 
 
 async def admin_payout_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if config.ADMIN_CHAT_ID is None or str(update.effective_user.id) != str(config.ADMIN_CHAT_ID):
-        await update.message.reply_text("Khusus admin.")
+        await update.message.reply_text("Admin only.")
         return
     if not context.args:
         await update.message.reply_text("Format: /payout <uid>")
         return
     uid = context.args[0]
     if not uid.isdigit():
-        await update.message.reply_text("UID harus berupa angka.")
+        await update.message.reply_text("UID must be numbers.")
         return
     n = db.mark_payout(uid)
-    await update.message.reply_text(f"✅ {n} komisi UID <code>{ui.esc(uid)}</code> ditandai PAID.", parse_mode="HTML")
+    await update.message.reply_text(f"✅ {n} commissions for UID <code>{ui.esc(uid)}</code> marked PAID.", parse_mode="HTML")
     if n and uid.isdigit():
         try:
             await context.bot.send_message(
                 chat_id=int(uid),
-                text="🎉 Komisi kamu sudah dicairkan oleh admin. Terima kasih! 💵",
+                text="🎉 Your affiliate commission has been paid out by admin. Thank you! 💵",
             )
         except Exception as e:
             logger.error("Notif payout gagal: %s", e)
@@ -1467,7 +1466,7 @@ async def admin_addstock_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE)
     result = await asyncio.to_thread(add_stock_to_sheet, product_id, items)
     if not result:
         await update.message.reply_text(
-            "❌ Gagal menambah stok. Cek SHEET_WRITE_URL atau Apps Script."
+            "❌ Failed to add stock. Check SHEET_WRITE_URL or Apps Script."
         )
         return
 
@@ -1479,10 +1478,10 @@ async def admin_addstock_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE)
     now_str = (datetime.now() + timedelta(hours=7)).strftime("%d/%m/%Y %H:%M")
 
     await update.message.reply_text(
-        f"✅ <b>Stok berhasil ditambah!</b>\n\n"
-        f"🛒 Produk: {ui.esc(product['name'])} (<code>{product_id}</code>)\n"
-        f"📦 Jumlah: <b>{added}</b> item\n\n"
-        f"Stok akan tersinkron otomatis di /menu berikutnya.",
+        f"✅ <b>Stock added successfully!</b>\n\n"
+        f"🛒 Product: {ui.esc(product['name'])} (<code>{product_id}</code>)\n"
+        f"📦 Added: <b>{added}</b> items\n\n"
+        f"Stock will update automatically on next /menu.",
         parse_mode="HTML",
     )
 
