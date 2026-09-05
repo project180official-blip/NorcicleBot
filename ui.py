@@ -324,8 +324,7 @@ def orders_page(user_id):
 
 
 def contact_page():
-    admin = config.ADMIN_USERNAME or db.get_setting("ADMIN_USERNAME", "norciclesupport")
-    admin = admin.strip().lstrip("@")
+    admin = "norciclesupport"
     text = (
         f"💬 <b>CUSTOMER SUPPORT</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"

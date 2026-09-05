@@ -1586,7 +1586,7 @@ async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             ]
         )
-    admin_user = (config.ADMIN_USERNAME or db.get_setting("ADMIN_USERNAME", "norciclesupport") or "").strip().lstrip("@")
+    admin_user = "norciclesupport"
     if admin_user:
         buttons.append(
             [InlineKeyboardButton("💬 Contact Support", url=f"https://t.me/{admin_user}")]
