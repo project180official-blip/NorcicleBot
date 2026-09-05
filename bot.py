@@ -1171,30 +1171,29 @@ async def confirm_payment(query, context, order_id):
     if order["status"] != "PENDING":
         await query.answer("Order status has already updated.")
         return
-    if config.PAYMENT_METHOD == "nevapedia" or order.get("payment_id"):
-        await query.answer("This order does not require manual verification.")
-        return
-    db.set_order_status(order_id, "AWAITING_ADMIN")
-    await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
-    kb = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("⌂ Home", callback_data="home")]]
-    )
-    caption = (
-        f"⏳ <b>Payment Submitted for Verification</b>\n\n"
-        f"Thank you! Your payment is currently being reviewed by admin.\n"
-        f"Product will be delivered automatically upon approval. 🙏"
-    )
-    try:
-        await query.edit_message_caption(caption=caption, parse_mode="HTML", reply_markup=kb)
-    except Exception as e:
-        logger.error("Edit caption confirm gagal: %s", e)
-        if query.message is not None:
+
+    # Instant delivery: otomatis selesaikan order dan kirim kredensial langsung ke user
+    await query.answer("Payment confirmed! Delivering your product... ⚡")
+    status = await complete_order(order_id, f"PAY-{order_id}", context)
+    
+    if status == "COMPLETED":
+        text, kb = ui.success_page(order_id)
+    elif status in ("NO_STOCK", "PAID_BUT_OUT_OF_STOCK"):
+        text, kb = ui.no_stock_paid_page(order_id)
+    else:
+        text, kb = ui.error_page("Failed to process delivery. Please contact support.")
+
+    if query.message:
+        if query.message.photo:
             try:
-                await query.message.reply_text(caption, parse_mode="HTML", reply_markup=kb)
+                await query.message.delete()
             except Exception:
                 pass
-    await query.answer("Thank you! ✅")
-    await notify_admin_pending_verification(order_id)
+            await app.bot.send_message(
+                chat_id=query.message.chat_id, text=text, parse_mode="HTML", reply_markup=kb
+            )
+        else:
+            await safe_edit(chat_id=query.message.chat_id, message_id=query.message.message_id, text=text, reply_markup=kb)
 
 
 async def notify_admin_pending_verification(order_id):
