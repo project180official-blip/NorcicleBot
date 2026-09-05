@@ -8,6 +8,15 @@ import db
 BRAND = "NORCICLE"
 
 
+# Custom Animated Emoji IDs (Telegram Premium)
+EMOJI_STAR = '<tg-emoji emoji-id="5224257782013769471">⭐</tg-emoji>'
+EMOJI_VERIFIED = '<tg-emoji emoji-id="5411309092427834175">✅</tg-emoji>'
+EMOJI_LIGHTNING = '<tg-emoji emoji-id="5222184635659747645">⚡</tg-emoji>'
+EMOJI_DOLLAR = '<tg-emoji emoji-id="5224301028039491729">💲</tg-emoji>'
+EMOJI_CHECK = '<tg-emoji emoji-id="5222314103153917906">✅</tg-emoji>'
+EMOJI_HEART = '<tg-emoji emoji-id="5273813153329719141">❤️</tg-emoji>'
+
+
 def esc(s):
     return html.escape(str(s))
 
@@ -26,17 +35,17 @@ def force_join_page():
     channel = config.CHANNEL_USERNAME
     channel_link = f"https://t.me/{channel.lstrip('@')}"
     text = (
-        f"<tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji> <b>{BRAND} OFFICIAL</b> <tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji>\n"
+        f"{EMOJI_STAR} <b>{BRAND} OFFICIAL</b> {EMOJI_VERIFIED}\n"
         f"────────────────────\n\n"
-        f"📢 <b>Channel Access Required</b>\n"
-        f"Join our official channel to get access to the store, exclusive drops, and discounts:\n\n"
+        f"📢 <b>Access Verification Required</b>\n"
+        f"Join our official update channel to unlock the store, exclusive drops, and stock updates:\n\n"
         f"👉 <b>{channel}</b>\n\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("📢 Join Channel", url=channel_link)],
-            [InlineKeyboardButton("✅ Verify Membership", callback_data="checkjoin")],
+            [InlineKeyboardButton("📢 Join Official Channel", url=channel_link)],
+            [InlineKeyboardButton("⚡ Verify Access", callback_data="checkjoin")],
         ]
     )
     return text, keyboard
@@ -94,10 +103,10 @@ def home_text(user_name=None):
     name_str = f", <b>{esc(user_name)}</b>" if user_name else ""
 
     text = (
-        f"<tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji> <b>{BRAND} STORE</b>{name_str} <tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji>\n"
+        f"{EMOJI_STAR} <b>{BRAND} OFFICIAL STORE</b>{name_str} {EMOJI_VERIFIED}\n"
         f"────────────────────\n"
-        f"⚡ <i>Instant Automated Delivery • 24/7 Service</i>\n"
-        f"💎 <i>Premium Digital Subscriptions & Accounts</i>\n\n"
+        f"{EMOJI_LIGHTNING} <i>Instant Automated 24/7 Delivery</i>\n"
+        f"{EMOJI_DOLLAR} <i>Direct Wholesale Digital Subscriptions</i>\n\n"
         f"<b>🛒 Available Products:</b>\n"
         f"<i>Tap any item below to select and purchase:</i>"
     )
@@ -233,18 +242,18 @@ def product_page(product, qty):
     icon = get_product_icon(product)
     promo_badge = ""
     if product.get("id") == "P0001" or "gemini" in pname:
-        promo_badge = "\n🎁 <i>Tier Pricing: 2-4 pcs = $0.80 | 5-9 pcs = $0.70 | 10+ pcs = $0.50</i>\n⚠️ <b>Min. Purchase: 2 pcs</b>"
+        promo_badge = f"\n{EMOJI_STAR} <i>Wholesale Tiers: 2-4 pcs = $0.80 | 5-9 pcs = $0.70 | 10+ pcs = $0.50</i>\n⚠️ <b>Min. Purchase: 2 pcs</b>"
 
     text = (
-        f"<tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji> {icon} <b>{esc(product['name'])}</b>\n"
+        f"{EMOJI_VERIFIED} {icon} <b>{esc(product['name'])}</b>\n"
         f"────────────────────\n\n"
         f"📖 <b>Description:</b>\n"
         f"{esc(product['description'])}\n"
         f"{promo_badge}\n\n"
         f"────────────────────\n"
-        f"💵 <b>Unit Price :</b> <b>{fmt_price(unit_price)}</b>\n"
-        f"📦 <b>Status     :</b> {stock_badge}\n"
-        f"⚡ <b>Delivery   :</b> Instant automated delivery\n"
+        f"{EMOJI_DOLLAR} <b>Unit Price :</b> <b>{fmt_price(unit_price)}</b>\n"
+        f"📦 <b>Vault Stock:</b> {stock_badge}\n"
+        f"{EMOJI_LIGHTNING} <b>Fulfillment:</b> Instant Automated Delivery\n"
         f"────────────────────\n\n"
         f"🔢 <b>Quantity   :</b> <b>{qty}x</b>\n"
         f"💰 <b>Total Due  :</b> <b>{fmt_price(total)}</b>\n\n"
@@ -287,11 +296,11 @@ def stock_page():
         items.append(product_line(p))
     
     text = (
-        f"📦 <b>LIVE VAULT INVENTORY</b>\n"
+        f"📦 <b>LIVE VAULT INVENTORY</b> {EMOJI_VERIFIED}\n"
         f"────────────────────\n\n"
         f"{chr(10).join(items)}\n\n"
         f"────────────────────\n"
-        f"🔄 <i>Inventory updates in real-time from secure server.</i>"
+        f"{EMOJI_LIGHTNING} <i>Inventory updates in real-time from secure server.</i>"
     )
     keyboard = InlineKeyboardMarkup(
         [
@@ -376,14 +385,14 @@ def payment_method_page(order, usdt_amount=None):
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
     icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
     text = (
-        f"💳 <b>CHECKOUT & PAYMENT</b>\n"
+        f"{EMOJI_VERIFIED} <b>SECURE CHECKOUT</b>\n"
         f"────────────────────\n\n"
-        f"{icon} <b>Product :</b> {esc(order['product_name'])}\n"
-        f"🔢 <b>Quantity:</b> {order['qty']}x\n"
-        f"💰 <b>Total   :</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
-        f"🧾 <b>Order ID:</b> <code>{order['order_id']}</code>\n\n"
+        f"{icon} <b>Item     :</b> {esc(order['product_name'])}\n"
+        f"🔢 <b>Quantity :</b> {order['qty']}x\n"
+        f"{EMOJI_DOLLAR} <b>Total Due:</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
+        f"🧾 <b>Order ID :</b> <code>{order['order_id']}</code>\n\n"
         f"────────────────────\n"
-        f"Select your preferred payment channel below:"
+        f"Select your preferred crypto payment channel below:"
     )
     buttons = [
         [
@@ -536,13 +545,13 @@ def awaiting_admin_page(order_id):
 
 def success_page(order_id):
     text = (
-        f"🎉 <b>ORDER COMPLETED!</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"✅ <b>Payment Verified Successfully</b>\n"
+        f"{EMOJI_VERIFIED} <b>ORDER COMPLETED!</b>\n"
+        f"────────────────────\n\n"
+        f"{EMOJI_CHECK} <b>Payment Verified Successfully</b>\n"
         f"🧾 <b>Order ID:</b> <code>{esc(order_id)}</code>\n\n"
         f"📦 Your digital credentials file has been delivered above.\n"
-        f"Thank you for shopping with <b>{BRAND}</b>!\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━"
+        f"Thank you for shopping with <b>{BRAND}</b>! {EMOJI_HEART}\n\n"
+        f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [[InlineKeyboardButton("« Return to Menu", callback_data="home")]]
@@ -603,7 +612,7 @@ def admin_panel():
     completed = sum(1 for o in orders if o["status"] == "COMPLETED")
 
     text = (
-        f"<tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji> <b>{BRAND} ADMIN CONSOLE</b>\n"
+        f"{EMOJI_VERIFIED} <b>{BRAND} ADMIN CONSOLE</b>\n"
         f"────────────────────\n\n"
         f"📊 <b>Store Metrics:</b>\n"
         f"• Active Products : <b>{len(products)}</b>\n"
