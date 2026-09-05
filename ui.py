@@ -47,8 +47,17 @@ def calculate_item_price(product, qty):
     pname = str(product.get("name", "")).lower()
     base_price = float(product.get("price", 0))
 
+    # Tiered pricing khusus Gemini AI:
+    # 2 - 4 pcs: $0.80
+    # 5 - 9 pcs: $0.70
+    # >= 10 pcs: $0.50
     if pid == "P0001" or "gemini" in pname:
-        unit_price = 0.8
+        if qty >= 10:
+            unit_price = 0.5
+        elif qty >= 5:
+            unit_price = 0.7
+        else:
+            unit_price = 0.8
         return unit_price, round(unit_price * qty, 2)
 
     return base_price, round(base_price * qty, 2)
@@ -59,7 +68,7 @@ def product_line(p):
     stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
     pname = str(p.get("name", "")).lower()
     if p.get("id") == "P0001" or "gemini" in pname:
-        price_display = "$0.80 (Min. 2 pcs)"
+        price_display = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
     else:
         price_display = fmt_price(p['price'])
     return f"• {p['emoji']} <b>{esc(p['name'])}</b>\n  └ 💵 <b>{price_display}</b>  |  {stock_badge}"
@@ -84,7 +93,7 @@ def home_text(user_name=None):
         stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 0"
         pname = str(p.get("name", "")).lower()
         if p.get("id") == "P0001" or "gemini" in pname:
-            price_tag = "$0.80 (Min. 2 pcs)"
+            price_tag = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
         else:
             price_tag = fmt_price(p['price'])
         rows.append([
@@ -161,7 +170,7 @@ def catalog_text():
         stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
         pname = str(p.get("name", "")).lower()
         if p.get("id") == "P0001" or "gemini" in pname:
-            price_tag = "$0.80 (Min. 2 pcs)"
+            price_tag = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
         else:
             price_tag = fmt_price(p['price'])
         items_list.append(
@@ -204,7 +213,7 @@ def product_page(product, qty):
     pname = str(product.get("name", "")).lower()
     promo_badge = ""
     if product.get("id") == "P0001" or "gemini" in pname:
-        promo_badge = "\n⚠️ <b>Min. Purchase: 2 pcs</b> (Price: $0.80/ea)"
+        promo_badge = "\n🎁 <i>Tier Pricing: 2-4 pcs = $0.80 | 5-9 pcs = $0.70 | 10+ pcs = $0.50</i>\n⚠️ <b>Min. Purchase: 2 pcs</b>"
 
     text = (
         f"{product['emoji']} <b>{esc(product['name'])}</b>\n"
