@@ -1256,30 +1256,14 @@ async def confirm_payment(query, context, order_id):
         elif verification.get("reason") == "TRANSACTION_NOT_FOUND":
             await query.answer("❌ Transaction not found yet! Please make sure you transferred the exact amount and included the Order ID in your transfer notes.", show_alert=True)
             return
-        elif verification.get("reason", "").startswith("API_ERROR"):
-            logger.warning("Binance API returned error: %s", verification.get("reason"))
-            await query.answer(f"Binance verification error ({verification.get('reason')}). Submitted to admin for review.", show_alert=True)
-
-    # 2. Fallback: Verifikasi manual oleh admin jika belum ada API key atau belum terdeteksi
-    db.set_order_status(order_id, "AWAITING_ADMIN")
-    await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
-
-    text, kb = ui.awaiting_admin_page(order_id)
-    await query.answer("Payment confirmation submitted! ✅")
-
-    if query.message:
-        if query.message.photo:
-            try:
-                await query.message.delete()
-            except Exception:
-                pass
-            await app.bot.send_message(
-                chat_id=query.message.chat_id, text=text, parse_mode="HTML", reply_markup=kb
-            )
         else:
-            await safe_edit(chat_id=query.message.chat_id, message_id=query.message.message_id, text=text, reply_markup=kb)
+            err_msg = verification.get("reason", "API_ERROR")
+            await query.answer(f"Binance API check failed ({err_msg}).", show_alert=True)
+            return
 
-    await notify_admin_pending_verification(order_id)
+    # 2. Jika API key belum diset di Render, peringatkan user / tolak otomatis
+    await query.answer("Automatic verification is not configured yet. Please check BINANCE_API_KEY in Render.", show_alert=True)
+    return
 
 
 async def notify_admin_pending_verification(order_id):
