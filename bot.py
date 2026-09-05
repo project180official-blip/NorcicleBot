@@ -1172,16 +1172,12 @@ async def confirm_payment(query, context, order_id):
         await query.answer("Order status has already updated.")
         return
 
-    # Instant delivery: otomatis selesaikan order dan kirim kredensial langsung ke user
-    await query.answer("Payment confirmed! Delivering your product... ⚡")
-    status = await complete_order(order_id, f"PAY-{order_id}", context)
-    
-    if status == "COMPLETED":
-        text, kb = ui.success_page(order_id)
-    elif status in ("NO_STOCK", "PAID_BUT_OUT_OF_STOCK"):
-        text, kb = ui.no_stock_paid_page(order_id)
-    else:
-        text, kb = ui.error_page("Failed to process delivery. Please contact support.")
+    # Verifikasi keamanan manual oleh admin
+    db.set_order_status(order_id, "AWAITING_ADMIN")
+    await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
+
+    text, kb = ui.awaiting_admin_page(order_id)
+    await query.answer("Payment confirmation submitted! ✅")
 
     if query.message:
         if query.message.photo:
@@ -1194,6 +1190,8 @@ async def confirm_payment(query, context, order_id):
             )
         else:
             await safe_edit(chat_id=query.message.chat_id, message_id=query.message.message_id, text=text, reply_markup=kb)
+
+    await notify_admin_pending_verification(order_id)
 
 
 async def notify_admin_pending_verification(order_id):
