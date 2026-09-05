@@ -39,7 +39,8 @@ SHEET_WRITE_SECRET = os.environ.get("SHEET_WRITE_SECRET", "").strip()
 
 TEST_MODE = os.environ.get("TEST_MODE", "false").lower() in ("1", "true", "yes")
 
-CHANNEL_USERNAME = os.environ.get("CHANNEL_USERNAME", "@NorcicleUpdate")
+REPORT_CHANNEL = os.environ.get("REPORT_CHANNEL", "@Norcicleupdate")
+CHANNEL_USERNAME = os.environ.get("CHANNEL_USERNAME", "@Norciclenews")
 
 # Banner welcome /start. Isi URL gambar publik ATAU file_id foto Telegram
 # (biarkan kosong jika tidak ingin banner).

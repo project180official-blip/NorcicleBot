@@ -1580,11 +1580,12 @@ async def notify_admin(text):
 
 
 async def notify_channel(text):
-    if not config.CHANNEL_USERNAME:
+    target = getattr(config, "REPORT_CHANNEL", None) or config.CHANNEL_USERNAME
+    if not target:
         return
     try:
         await app.bot.send_message(
-            chat_id=config.CHANNEL_USERNAME, text=text, parse_mode="HTML"
+            chat_id=target, text=text, parse_mode="HTML"
         )
     except Exception as e:
         logger.error("Notifikasi channel gagal: %s", e)
