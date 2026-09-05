@@ -163,13 +163,9 @@ def home_text(user_name=None):
 
         btn = InlineKeyboardButton(
             f"{p['name']} • {price_tag} [{stock_badge}]",
-            callback_data=f"product:{p['id']}"
+            callback_data=f"product:{p['id']}",
+            api_kwargs={"icon_custom_emoji_id": emoji_id, "style": "success"}
         )
-        try:
-            setattr(btn, "icon_custom_emoji_id", emoji_id)
-            setattr(btn, "style", "success")
-        except Exception:
-            pass
         rows.append([btn])
 
     # Navigasi Menu
@@ -269,13 +265,9 @@ def catalog_text():
 
         btn = InlineKeyboardButton(
             f"{p['name']} • {price_tag} [{stock_badge}]",
-            callback_data=f"product:{p['id']}"
+            callback_data=f"product:{p['id']}",
+            api_kwargs={"icon_custom_emoji_id": emoji_id, "style": "success"}
         )
-        try:
-            setattr(btn, "icon_custom_emoji_id", emoji_id)
-            setattr(btn, "style", "success")
-        except Exception:
-            pass
         rows.append([btn])
 
     rows.append(
@@ -325,12 +317,11 @@ def product_page(product, qty):
             ],
         ]
     else:
-            buy_btn = InlineKeyboardButton(f"Order Now • {fmt_price(total)}", callback_data=f"buy:{product['id']}")
-            try:
-                setattr(buy_btn, "style", "success")
-                setattr(buy_btn, "icon_custom_emoji_id", "5222184635659747645")
-            except Exception:
-                pass
+            buy_btn = InlineKeyboardButton(
+                f"Order Now • {fmt_price(total)}",
+                callback_data=f"buy:{product['id']}",
+                api_kwargs={"icon_custom_emoji_id": "5222184635659747645", "style": "success"}
+            )
             rows = [
                 [
                     InlineKeyboardButton("➖", callback_data=f"qtydec:{product['id']}"),
@@ -456,13 +447,8 @@ def payment_method_page(order, usdt_amount=None):
         f"────────────────────\n"
         f"Select your preferred crypto payment channel below:"
     )
-    b1 = InlineKeyboardButton("Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}")
-    b2 = InlineKeyboardButton("USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}")
-    try:
-        setattr(b1, "style", "success")
-        setattr(b2, "style", "success")
-    except Exception:
-        pass
+    b1 = InlineKeyboardButton("Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}", api_kwargs={"style": "success"})
+    b2 = InlineKeyboardButton("USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}", api_kwargs={"style": "success"})
     buttons = [
         [b1, b2],
         [InlineKeyboardButton("« Cancel & Return", callback_data="home")],
@@ -491,12 +477,11 @@ def binance_pay_page(order, usdt_amount=None):
         f"────────────────────\n"
         f"<i>Tap the button below after completing your transfer:</i>"
     )
-    pay_btn = InlineKeyboardButton("I Have Transferred", callback_data=f"confirm_pay:{order['order_id']}")
-    try:
-        setattr(pay_btn, "style", "success")
-        setattr(pay_btn, "icon_custom_emoji_id", "5411309092427834175")
-    except Exception:
-        pass
+    pay_btn = InlineKeyboardButton(
+        "I Have Transferred",
+        callback_data=f"confirm_pay:{order['order_id']}",
+        api_kwargs={"icon_custom_emoji_id": "5411309092427834175", "style": "success"}
+    )
 
     keyboard = InlineKeyboardMarkup(
         [
@@ -533,12 +518,11 @@ def crypto_usdt_page(order, usdt_amount=None):
         f"────────────────────\n"
         f"<i>Tap the button below after broadcasting transfer:</i>"
     )
-    pay_btn2 = InlineKeyboardButton("I Have Transferred", callback_data=f"confirm_pay:{order['order_id']}")
-    try:
-        setattr(pay_btn2, "style", "success")
-        setattr(pay_btn2, "icon_custom_emoji_id", "5411309092427834175")
-    except Exception:
-        pass
+    pay_btn2 = InlineKeyboardButton(
+        "I Have Transferred",
+        callback_data=f"confirm_pay:{order['order_id']}",
+        api_kwargs={"icon_custom_emoji_id": "5411309092427834175", "style": "success"}
+    )
 
     keyboard = InlineKeyboardMarkup(
         [
