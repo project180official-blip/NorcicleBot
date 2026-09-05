@@ -1606,6 +1606,19 @@ async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (update.message.text or "").strip()
     
+    # 0. Debugger pembaca ID Custom Emoji animasi Telegram Premium
+    if update.message and update.message.entities:
+        for ent in update.message.entities:
+            if ent.type == "custom_emoji" and ent.custom_emoji_id:
+                await update.message.reply_text(
+                    f"✨ <b>Custom Animated Emoji Detected!</b>\n"
+                    f"🆔 <code>{ent.custom_emoji_id}</code>\n\n"
+                    f"HTML Tag:\n"
+                    f"<code>&lt;tg-emoji emoji-id=\"{ent.custom_emoji_id}\"&gt;⭐&lt;/tg-emoji&gt;</code>",
+                    parse_mode="HTML"
+                )
+                return
+
     # 1. Cek jika user sedang mengetik custom quantity
     awaiting_pid = context.user_data.get("awaiting_qty_for")
     if awaiting_pid and text.isdigit():
