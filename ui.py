@@ -26,6 +26,8 @@ EMOJI_CLAUDE = '<tg-emoji emoji-id="5899837428797020489">😒</tg-emoji>'
 EMOJI_HBO = '<tg-emoji emoji-id="5298588152485651370">📺</tg-emoji>'
 EMOJI_CAPCUT = '<tg-emoji emoji-id="5474521476197536994">🖤</tg-emoji>'
 EMOJI_NETFLIX = '<tg-emoji emoji-id="5355165443143252480">📺</tg-emoji>'
+EMOJI_CHATGPT = '<tg-emoji emoji-id="5951817721468424817">🤖</tg-emoji>'
+EMOJI_GROK = '<tg-emoji emoji-id="5222184635659747645">⚡</tg-emoji>'
 EMOJI_DEFAULT_PROD = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
 
 
@@ -87,8 +89,12 @@ def calculate_item_price(product, qty):
 def get_product_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
-    if "claude" in name:
+    if "claude" in name or pid == "P0006":
         return EMOJI_CLAUDE
+    if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
+        return EMOJI_CHATGPT
+    if "grok" in name or pid == "P0008":
+        return EMOJI_GROK
     if "gemini" in name or pid == "P0001":
         return EMOJI_GEMINI
     if "hbo" in name or "max" in name:
@@ -103,8 +109,12 @@ def get_product_icon(product):
 def get_product_emoji_id(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
-    if "claude" in name:
+    if "claude" in name or pid == "P0006":
         return "5899837428797020489"
+    if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
+        return "5951817721468424817"
+    if "grok" in name or pid == "P0008":
+        return "5222184635659747645"
     if "gemini" in name or pid == "P0001":
         return "5951817721468424817"
     if "hbo" in name or "max" in name:
@@ -119,8 +129,12 @@ def get_product_emoji_id(product):
 def get_product_btn_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
-    if "claude" in name:
+    if "claude" in name or pid == "P0006":
         return "🧠"
+    if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
+        return "🤖"
+    if "grok" in name or pid == "P0008":
+        return "⚡"
     if "gemini" in name or pid == "P0001":
         return "✨"
     if "hbo" in name or "max" in name:

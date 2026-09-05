@@ -1112,6 +1112,20 @@ async def send_product_file(context, order, contents):
         file_text += NETFLIX_VPN_TERMS
     if "leonardo" in order["product_name"].lower():
         file_text += LEONARDO_AI_TERMS
+    if "claude" in order["product_name"].lower():
+        file_text += (
+            "🧠 CLAUDE AI ACCESS GUIDE:\n"
+            "1. Check login details provided above (Email/Credentials).\n"
+            "2. If OTP is required, access OTP via: https://mailku.online/mailbox\n"
+            "3. Full warranty active as specified in product terms.\n"
+        )
+    if "chatgpt" in order["product_name"].lower() or "gpt" in order["product_name"].lower():
+        file_text += (
+            "🤖 CHATGPT PLUS ACCESS GUIDE:\n"
+            "1. Log in with provided credentials above.\n"
+            "2. If email verification/OTP needed, check: https://mailku.online/mailbox\n"
+            "3. Enjoy GPT Plus features and premium tools.\n"
+        )
     file_text += "Thank you for purchasing!\n"
     buf = io.BytesIO(file_text.encode("utf-8"))
     buf.name = f"product-{order['order_id']}.txt"
