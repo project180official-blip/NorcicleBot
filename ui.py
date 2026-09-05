@@ -63,15 +63,30 @@ def calculate_item_price(product, qty):
     return base_price, round(base_price * qty, 2)
 
 
+def get_product_icon(product):
+    name = str(product.get("name", "")).lower()
+    pid = str(product.get("id", "")).upper()
+    if "gemini" in name or pid == "P0001":
+        return "✨"
+    if "hbo" in name or "max" in name:
+        return "🎬"
+    if "capcut" in name:
+        return "✂️"
+    if "netflix" in name:
+        return "🍿"
+    return product.get("emoji") or "💎"
+
+
 def product_line(p):
     avail = db.count_available(p["id"])
     stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
     pname = str(p.get("name", "")).lower()
+    icon = get_product_icon(p)
     if p.get("id") == "P0001" or "gemini" in pname:
         price_display = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
     else:
         price_display = fmt_price(p['price'])
-    return f"• {p['emoji']} <b>{esc(p['name'])}</b>\n  └ 💵 <b>{price_display}</b>  |  {stock_badge}"
+    return f"{icon} <b>{esc(p['name'])}</b>\n   └ 💵 <b>{price_display}</b>  •  {stock_badge}"
 
 
 def home_text(user_name=None):
@@ -79,11 +94,12 @@ def home_text(user_name=None):
     name_str = f", <b>{esc(user_name)}</b>" if user_name else ""
 
     text = (
-        f"👑 <b>WELCOME TO {BRAND} STORE</b>{name_str}\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"⚡ <i>Instant Delivery • 100% Automated • 24/7</i>\n"
-        f"💎 <i>High-Quality Digital Accounts & Subscriptions</i>\n\n"
-        f"<i>Select a product or menu below to get started:</i>"
+        f"👑 <b>{BRAND} STORE</b>{name_str}\n"
+        f"────────────────────\n"
+        f"⚡ <i>Instant Automated Delivery • 24/7 Service</i>\n"
+        f"💎 <i>Premium Digital Subscriptions & Accounts</i>\n\n"
+        f"<b>🛒 Available Products:</b>\n"
+        f"<i>Tap any item below to select and purchase:</i>"
     )
 
     rows = []
@@ -92,13 +108,14 @@ def home_text(user_name=None):
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 0"
         pname = str(p.get("name", "")).lower()
+        icon = get_product_icon(p)
         if p.get("id") == "P0001" or "gemini" in pname:
-            price_tag = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
+            price_tag = "$0.80"
         else:
             price_tag = fmt_price(p['price'])
         rows.append([
             InlineKeyboardButton(
-                f"{p['emoji']} {esc(p['name'])} — {price_tag} ({stock_badge})",
+                f"{icon} {esc(p['name'])} • {price_tag} [{stock_badge}]",
                 callback_data=f"product:{p['id']}"
             )
         ])
@@ -106,14 +123,14 @@ def home_text(user_name=None):
     # Navigasi Menu
     rows.append([
         InlineKeyboardButton("📦 Live Stock", callback_data="stock"),
-        InlineKeyboardButton("🧾 My Orders", callback_data="orders"),
+        InlineKeyboardButton("🧾 Orders", callback_data="orders"),
     ])
     rows.append([
         InlineKeyboardButton("🤝 Affiliate (5%)", callback_data="affiliate"),
-        InlineKeyboardButton("💬 Support Desk", callback_data="contact"),
+        InlineKeyboardButton("💬 Support", callback_data="contact"),
     ])
     rows.append([
-        InlineKeyboardButton("🔄 Refresh Menu", callback_data="refresh"),
+        InlineKeyboardButton("🔄 Refresh", callback_data="refresh"),
     ])
 
     return text, InlineKeyboardMarkup(rows)
@@ -124,9 +141,9 @@ def promo_page():
     if not products:
         text = (
             f"🔥 <b>SPECIAL OFFERS & PROMOS</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"────────────────────\n\n"
             f"No special promos active right now.\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━"
+            f"────────────────────"
         )
         keyboard = InlineKeyboardMarkup(
             [[InlineKeyboardButton("« Return to Menu", callback_data="home")]]
@@ -136,9 +153,9 @@ def promo_page():
     items = [product_line(p) for p in products]
     text = (
         f"🔥 <b>SPECIAL OFFERS & DEALS</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"────────────────────\n\n"
         f"{chr(10).join(items)}\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"────────────────────\n"
         f"⚡ <i>Limited stocks available. Grab yours now!</i>"
     )
     keyboard = InlineKeyboardMarkup(
@@ -169,28 +186,30 @@ def catalog_text():
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
         pname = str(p.get("name", "")).lower()
+        icon = get_product_icon(p)
         if p.get("id") == "P0001" or "gemini" in pname:
             price_tag = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
         else:
             price_tag = fmt_price(p['price'])
         items_list.append(
-            f"<b>{i}. {p['emoji']} {esc(p['name'])}</b>\n"
-            f"   └ 💵 <b>{price_tag}</b>  |  {stock_badge}"
+            f"<b>{i}. {icon} {esc(p['name'])}</b>\n"
+            f"   └ 💵 <b>{price_tag}</b>  •  {stock_badge}"
         )
 
     text = (
         f"🛍️ <b>PRODUCT CATALOG</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"────────────────────\n\n"
         f"{chr(10).join(items_list)}\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"<i>Select a product to view details & purchase:</i>"
+        f"────────────────────\n"
+        f"<i>Select an item to view details & purchase:</i>"
     )
 
     rows = []
     for i, p in enumerate(products, 1):
+        icon = get_product_icon(p)
         rows.append([
             InlineKeyboardButton(
-                f"🛍️ Buy #{i}: {esc(p['name'])}",
+                f"{icon} Buy #{i}: {esc(p['name'])}",
                 callback_data=f"product:{p['id']}"
             )
         ])
@@ -211,24 +230,25 @@ def product_page(product, qty):
     stock_badge = f"🟢 In Stock ({avail} available)" if avail > 0 else "🔴 Out of Stock"
     
     pname = str(product.get("name", "")).lower()
+    icon = get_product_icon(product)
     promo_badge = ""
     if product.get("id") == "P0001" or "gemini" in pname:
         promo_badge = "\n🎁 <i>Tier Pricing: 2-4 pcs = $0.80 | 5-9 pcs = $0.70 | 10+ pcs = $0.50</i>\n⚠️ <b>Min. Purchase: 2 pcs</b>"
 
     text = (
-        f"{product['emoji']} <b>{esc(product['name'])}</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"{icon} <b>{esc(product['name'])}</b>\n"
+        f"────────────────────\n\n"
         f"📖 <b>Description:</b>\n"
         f"{esc(product['description'])}\n"
         f"{promo_badge}\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"💵 <b>Unit Price:</b> <b>{fmt_price(unit_price)}</b>\n"
-        f"📦 <b>Status    :</b> {stock_badge}\n"
-        f"⚡ <b>Delivery  :</b> Instant Delivery (.txt credential)\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🔢 <b>Selected Quantity:</b> <b>{qty}x</b>\n"
-        f"💰 <b>Total Payable     :</b> <b>{fmt_price(total)}</b>\n\n"
-        f"💡 <i>Tip: You can use [-] / [+] or send a number directly in chat to set custom quantity.</i>"
+        f"────────────────────\n"
+        f"💵 <b>Unit Price :</b> <b>{fmt_price(unit_price)}</b>\n"
+        f"📦 <b>Status     :</b> {stock_badge}\n"
+        f"⚡ <b>Delivery   :</b> Instant automated delivery\n"
+        f"────────────────────\n\n"
+        f"🔢 <b>Quantity   :</b> <b>{qty}x</b>\n"
+        f"💰 <b>Total Due  :</b> <b>{fmt_price(total)}</b>\n\n"
+        f"💡 <i>Tip: Adjust with [-] / [+] or send a number directly in chat.</i>"
     )
 
     if sold_out:
@@ -267,11 +287,11 @@ def stock_page():
         items.append(product_line(p))
     
     text = (
-        f"📦 <b>LIVE VAULT STOCK</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📦 <b>LIVE VAULT INVENTORY</b>\n"
+        f"────────────────────\n\n"
         f"{chr(10).join(items)}\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🔄 <i>Inventory updates in real-time from server.</i>"
+        f"────────────────────\n"
+        f"🔄 <i>Inventory updates in real-time from secure server.</i>"
     )
     keyboard = InlineKeyboardMarkup(
         [
@@ -287,9 +307,9 @@ def orders_page(user_id):
     if not rows:
         text = (
             f"🧾 <b>ORDER HISTORY</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"────────────────────\n\n"
             f"You don't have any purchase logs yet.\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━"
+            f"────────────────────"
         )
     else:
         items = []
@@ -302,16 +322,17 @@ def orders_page(user_id):
                 "PAID_BUT_OUT_OF_STOCK": "⚠️",
                 "AWAITING_ADMIN": "🕐",
             }.get(o["status"], "•")
+            p_icon = get_product_icon({"name": o['product_name']})
             items.append(
                 f"🧾 <b>Order:</b> <code>{o['order_id']}</code>\n"
-                f"   └ {esc(o['product_name'])} x{o['qty']} • <b>{fmt_price(o['total'])}</b>\n"
+                f"   └ {p_icon} {esc(o['product_name'])} x{o['qty']} • <b>{fmt_price(o['total'])}</b>\n"
                 f"   └ Status: {icon} <b>{o['status']}</b>"
             )
         text = (
             f"🧾 <b>MY ORDERS & TRANSACTIONS</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"────────────────────\n\n"
             f"{chr(10).join(items)}\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━"
+            f"────────────────────"
         )
 
     keyboard = InlineKeyboardMarkup(
@@ -327,20 +348,20 @@ def contact_page():
     admin = "norciclesupport"
     text = (
         f"💬 <b>CUSTOMER SUPPORT</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"────────────────────\n\n"
         f"Need help with your order or have a custom inquiry?\n\n"
-        f"👤 <b>Official Admin:</b> @{esc(admin)}\n\n"
-        f"<b>Available Shortcut Commands:</b>\n"
+        f"👤 <b>Official Support:</b> @{esc(admin)}\n\n"
+        f"<b>Shortcut Commands:</b>\n"
         f"• <code>/start</code> — Main Menu\n"
         f"• <code>/products</code> — Product Catalog\n"
-        f"• <code>/stock</code> — Live Stock Vault\n"
-        f"• <code>/orders</code> — Transaction History\n"
+        f"• <code>/stock</code> — Live Vault\n"
+        f"• <code>/orders</code> — Purchase History\n"
         f"• <code>/support</code> — Direct Support Desk\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━"
+        f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("💬 Open Chat with Admin", url=f"https://t.me/{admin}")],
+            [InlineKeyboardButton("💬 Contact Support (@norciclesupport)", url=f"https://t.me/{admin}")],
             [InlineKeyboardButton("« Return to Menu", callback_data="home")],
         ]
     )
@@ -353,15 +374,16 @@ def loading_text(msg="Processing your order..."):
 
 def payment_method_page(order, usdt_amount=None):
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
+    icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
     text = (
-        f"💳 <b>CHECKOUT & SETTLEMENT</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🛍️ <b>Product :</b> {esc(order['product_name'])}\n"
+        f"💳 <b>CHECKOUT & PAYMENT</b>\n"
+        f"────────────────────\n\n"
+        f"{icon} <b>Product :</b> {esc(order['product_name'])}\n"
         f"🔢 <b>Quantity:</b> {order['qty']}x\n"
-        f"💰 <b>Total Due:</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
+        f"💰 <b>Total   :</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
         f"🧾 <b>Order ID:</b> <code>{order['order_id']}</code>\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"Select your crypto payment channel below:"
+        f"────────────────────\n"
+        f"Select your preferred payment channel below:"
     )
     buttons = [
         [
@@ -376,13 +398,14 @@ def payment_method_page(order, usdt_amount=None):
 def binance_pay_page(order, usdt_amount=None):
     pay_id = config.BINANCE_PAY_ID
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
+    icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
     text = (
         f"🟡 <b>BINANCE PAY SETTLEMENT</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🛍️ <b>Item    :</b> {esc(order['product_name'])} x{order['qty']}\n"
+        f"────────────────────\n\n"
+        f"{icon} <b>Item    :</b> {esc(order['product_name'])} x{order['qty']}\n"
         f"💰 <b>Amount  :</b> <b>{amt:.2f} USDT</b> (Send exact)\n"
         f"🧾 <b>Order ID:</b> <code>{order['order_id']}</code>\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"────────────────────\n"
         f"📲 <b>Binance Pay ID:</b>\n"
         f"👉 <code>{pay_id}</code>\n\n"
         f"<b>Payment Steps:</b>\n"
@@ -390,7 +413,7 @@ def binance_pay_page(order, usdt_amount=None):
         f"2. Input Binance ID: <code>{pay_id}</code>\n"
         f"3. Enter exact amount: <b>{amt:.2f} USDT</b>\n"
         f"4. Add Order ID to notes: <code>{order['order_id']}</code>\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"────────────────────\n"
         f"<i>Tap the button below after completing your transfer:</i>"
     )
     keyboard = InlineKeyboardMarkup(
@@ -417,19 +440,20 @@ def binance_pay_page(order, usdt_amount=None):
 def crypto_usdt_page(order, usdt_amount=None):
     wallet = config.CRYPTO_WALLET_USDT
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
+    icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
     text = (
         f"🌐 <b>USDT (BEP20 / BSC) PAYMENT</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🛍️ <b>Item    :</b> {esc(order['product_name'])} x{order['qty']}\n"
+        f"────────────────────\n\n"
+        f"{icon} <b>Item    :</b> {esc(order['product_name'])} x{order['qty']}\n"
         f"💰 <b>Amount  :</b> <b>{amt:.2f} USDT</b> (Exact)\n"
         f"🧾 <b>Order ID:</b> <code>{order['order_id']}</code>\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"────────────────────\n"
         f"📩 <b>Deposit Wallet Address:</b>\n"
         f"👉 <code>{wallet}</code>\n\n"
         f"⚠️ <b>Network Checklist:</b>\n"
         f"• Network: <b>BNB Smart Chain (BEP20)</b>\n"
         f"• Do not send through other chains (ERC20/TRC20)\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"────────────────────\n"
         f"<i>Tap the button below after broadcasting transfer:</i>"
     )
     keyboard = InlineKeyboardMarkup(
