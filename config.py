@@ -46,5 +46,5 @@ CHANNEL_USERNAME = os.environ.get("CHANNEL_USERNAME", "")
 # (biarkan kosong jika tidak ingin banner).
 BANNER_URL = os.environ.get(
     "BANNER_URL",
-    "https://i.ibb.co.com/1tLnstk1/Chat-GPT-Image-Sep-6-2026-03-07-27-AM.png",
+    "https://i.ibb.co.com/Q3SJBxNn/Chat-GPT-Image-Sep-6-2026-06-36-09-AM.png",
 ).strip()
