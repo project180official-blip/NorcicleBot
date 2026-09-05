@@ -509,14 +509,8 @@ async def render_product(chat_id, edit_message_id, product_id, qty):
 
 
 async def check_member(bot, user_id):
-    if not config.CHANNEL_USERNAME:
-        return True
-    try:
-        member = await bot.get_chat_member(chat_id=config.CHANNEL_USERNAME, user_id=user_id)
-        return member.status in ("member", "administrator", "creator")
-    except Exception as e:
-        logger.warning("check_member gagal (fail-open): %s", e)
-        return True
+    # Nonaktifkan kewajiban join channel: user bisa langsung berbelanja tanpa dipaksa subscribe
+    return True
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
