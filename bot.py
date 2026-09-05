@@ -668,18 +668,22 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
 
     elif data.startswith("product:"):
         product_id = data.split(":", 1)[1]
-        context.user_data["qty"] = 1
+        p = get_product(product_id)
+        default_qty = 2 if p and (p.get("id") == "P0001" or "gemini" in str(p.get("name", "")).lower()) else 1
+        context.user_data["qty"] = default_qty
         context.user_data["product_id"] = product_id
-        await render_product(chat_id, msg_id, product_id, 1)
+        await render_product(chat_id, msg_id, product_id, default_qty)
 
     elif data.startswith("qtydec:") or data.startswith("qtyinc:"):
         op, product_id = data.split(":", 1)
-        qty = context.user_data.get("qty", 1)
+        p = get_product(product_id)
+        min_qty = 2 if p and (p.get("id") == "P0001" or "gemini" in str(p.get("name", "")).lower()) else 1
+        qty = context.user_data.get("qty", min_qty)
         if op == "qtydec":
-            qty = max(1, qty - 1)
+            qty = max(min_qty, qty - 1)
         else:
             avail = db.count_available(product_id)
-            qty = max(1, min(avail, qty + 1))
+            qty = max(min_qty, min(avail, qty + 1))
         context.user_data["qty"] = qty
         context.user_data["product_id"] = product_id
         await render_product(chat_id, msg_id, product_id, qty)
@@ -745,6 +749,14 @@ async def do_checkout(query, context, chat_id, msg_id):
     product = get_product(product_id)
     if not product:
         text, kb = ui.error_page("Product not found.")
+        await safe_edit(
+            chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
+        )
+        return
+    
+    is_gemini = product.get("id") == "P0001" or "gemini" in str(product.get("name", "")).lower()
+    if is_gemini and qty < 2:
+        text, kb = ui.error_page("Minimum order for Gemini AI Pro is 2 accounts.")
         await safe_edit(
             chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
         )
@@ -1577,7 +1589,7 @@ async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             ]
         )
-    admin_user = (db.get_setting("ADMIN_USERNAME", "") or config.ADMIN_USERNAME or "").strip().lstrip("@")
+    admin_user = (config.ADMIN_USERNAME or db.get_setting("ADMIN_USERNAME", "Norcicle") or "").strip().lstrip("@")
     if admin_user:
         buttons.append(
             [InlineKeyboardButton("💬 Contact Support", url=f"https://t.me/{admin_user}")]
@@ -1604,10 +1616,12 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         product = get_product(awaiting_pid)
         if product:
             avail = db.count_available(awaiting_pid)
-            if target_qty < 1:
-                target_qty = 1
+            is_gemini = product.get("id") == "P0001" or "gemini" in str(product.get("name", "")).lower()
+            min_q = 2 if is_gemini else 1
+            if target_qty < min_q:
+                target_qty = min_q
             elif target_qty > avail:
-                target_qty = max(1, avail)
+                target_qty = max(min_q, avail)
             
             context.user_data["qty"] = target_qty
             context.user_data["product_id"] = awaiting_pid
@@ -1627,7 +1641,9 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             product = get_product(current_pid)
             if product:
                 avail = db.count_available(current_pid)
-                set_qty = max(1, min(avail, num))
+                is_gemini = product.get("id") == "P0001" or "gemini" in str(product.get("name", "")).lower()
+                min_q = 2 if is_gemini else 1
+                set_qty = max(min_q, min(avail, num))
                 context.user_data["qty"] = set_qty
                 text_msg, kb = ui.product_page(product, set_qty)
                 await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
@@ -1637,16 +1653,17 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         products = db.get_active_products()
         if 1 <= num <= len(products):
             product = products[num - 1]
-            context.user_data["qty"] = 1
+            is_gemini = product.get("id") == "P0001" or "gemini" in str(product.get("name", "")).lower()
+            default_qty = 2 if is_gemini else 1
+            context.user_data["qty"] = default_qty
             context.user_data["product_id"] = product["id"]
             avail = db.count_available(product["id"])
-            if avail < 1:
+            if avail < default_qty:
                 from ui import soldout_page
                 text_msg, kb = soldout_page()
                 await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
             else:
-                qty = context.user_data.get("qty", 1)
-                text_msg, kb = ui.product_page(product, qty)
+                text_msg, kb = ui.product_page(product, default_qty)
                 await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
             return
 
