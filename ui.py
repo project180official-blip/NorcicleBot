@@ -26,12 +26,12 @@ def force_join_page():
     channel = config.CHANNEL_USERNAME
     channel_link = f"https://t.me/{channel.lstrip('@')}"
     text = (
-        f"👑 <b>{BRAND} OFFICIAL</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"<tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji> <b>{BRAND} OFFICIAL</b> <tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji>\n"
+        f"────────────────────\n\n"
         f"📢 <b>Channel Access Required</b>\n"
         f"Join our official channel to get access to the store, exclusive drops, and discounts:\n\n"
         f"👉 <b>{channel}</b>\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━"
+        f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [
@@ -94,7 +94,7 @@ def home_text(user_name=None):
     name_str = f", <b>{esc(user_name)}</b>" if user_name else ""
 
     text = (
-        f"👑 <b>{BRAND} STORE</b>{name_str}\n"
+        f"<tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji> <b>{BRAND} STORE</b>{name_str} <tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji>\n"
         f"────────────────────\n"
         f"⚡ <i>Instant Automated Delivery • 24/7 Service</i>\n"
         f"💎 <i>Premium Digital Subscriptions & Accounts</i>\n\n"
@@ -236,7 +236,7 @@ def product_page(product, qty):
         promo_badge = "\n🎁 <i>Tier Pricing: 2-4 pcs = $0.80 | 5-9 pcs = $0.70 | 10+ pcs = $0.50</i>\n⚠️ <b>Min. Purchase: 2 pcs</b>"
 
     text = (
-        f"{icon} <b>{esc(product['name'])}</b>\n"
+        f"<tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji> {icon} <b>{esc(product['name'])}</b>\n"
         f"────────────────────\n\n"
         f"📖 <b>Description:</b>\n"
         f"{esc(product['description'])}\n"
@@ -603,13 +603,13 @@ def admin_panel():
     completed = sum(1 for o in orders if o["status"] == "COMPLETED")
 
     text = (
-        f"🔐 <b>{BRAND} ADMIN CONSOLE</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"<tg-emoji emoji-id=\"5224257782013769471\">⭐</tg-emoji> <b>{BRAND} ADMIN CONSOLE</b>\n"
+        f"────────────────────\n\n"
         f"📊 <b>Store Metrics:</b>\n"
         f"• Active Products : <b>{len(products)}</b>\n"
         f"• Total Vault Stock: <b>{total_stock} items</b>\n"
         f"• Total Orders    : <b>{len(orders)}</b> ({pending} pending, {completed} completed)\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━"
+        f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [
