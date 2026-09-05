@@ -1205,19 +1205,28 @@ async def complete_order(order_id, payment_id, context):
         db.set_order_delivered(order_id)
     except Exception as e:
         logger.error("Kirim file produk gagal: %s", e)
+    
+    total_rev, total_count = db.get_total_sales_revenue()
+    p_icon = ui.get_product_icon({"name": order['product_name']})
+
     await notify_admin(
         f"✅ <b>ORDER COMPLETED</b>\n\n"
         f"🆔 Order <code>{order_id}</code>\n"
-        f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
+        f"{p_icon} {ui.esc(order['product_name'])} x{order['qty']}\n"
         f"💰 Total: <b>{ui.fmt_price(order['total'])}</b>\n"
         f"👤 User: {order['telegram_id']}\n"
-        f"📦 Status: <b>COMPLETED</b>{' ⚠️ delivery failed' if not delivered else ''}"
+        f"📦 Status: <b>COMPLETED</b>{' ⚠️ delivery failed' if not delivered else ''}\n"
+        f"📊 Total Revenue: <b>{ui.fmt_price(total_rev)}</b> ({total_count} orders)"
     )
     await notify_channel(
-        f"✅ <b>NEW PURCHASE</b>\n\n"
-        f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
-        f"💰 Total: <b>{ui.fmt_price(order['total'])}</b>\n"
-        f"📦 Status: <b>COMPLETED</b>"
+        f"🎉 <b>NEW PURCHASE REPORT</b>\n"
+        f"────────────────────\n"
+        f"{p_icon} <b>Item:</b> {ui.esc(order['product_name'])}\n"
+        f"🔢 <b>Qty :</b> {order['qty']}x\n"
+        f"💰 <b>Paid:</b> <b>{ui.fmt_price(order['total'])}</b> (Verified ⚡)\n"
+        f"────────────────────\n"
+        f"📈 <b>Total Store Volume:</b> <b>{ui.fmt_price(total_rev)}</b>\n"
+        f"🛒 <i>Instant 24/7 delivery completed via bot!</i>"
     )
     return "COMPLETED"
 

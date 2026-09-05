@@ -501,6 +501,16 @@ def count_all_available():
     return row["c"]
 
 
+def get_total_sales_revenue():
+    """Menghitung total akumulasi penjualan yang sudah berstatus COMPLETED."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT COALESCE(SUM(total), 0) as s, COUNT(*) as count FROM orders WHERE status='COMPLETED'"
+    ).fetchone()
+    conn.close()
+    return float(row["s"]), int(row["count"])
+
+
 def set_referred(referred_uid, referrer_uid):
     conn = get_conn()
     c = conn.cursor()
