@@ -122,13 +122,12 @@ import hashlib
 import urllib.parse
 
 
-def verify_binance_pay_transaction(order_id_target, expected_amount, tolerance_minutes=120):
-    """Cek transaksi masuk di Binance Pay via API key."""
+def verify_binance_pay_transaction(user_input_id, expected_amount, tolerance_minutes=180):
+    """Cek transaksi masuk di Binance Pay via API key berdasarkan Transaction ID atau Order ID dari user."""
     if not config.BINANCE_API_KEY or not config.BINANCE_API_SECRET:
         return {"ok": False, "reason": "NO_API_KEYS"}
     
     timestamp = int(time.time() * 1000)
-    # Cek transaksi dalam rentang beberapa jam terakhir
     start_time = timestamp - (tolerance_minutes * 60 * 1000)
     params = {
         "timestamp": timestamp,
@@ -154,17 +153,16 @@ def verify_binance_pay_transaction(order_id_target, expected_amount, tolerance_m
         data = resp.json()
         tx_list = data.get("data") or []
         
-        # Cari transaksi masuk (deposit/receive) dengan order_id di note atau transaksi yang cocok nominalnya
-        target_oid = str(order_id_target).strip().upper()
+        target_clean = str(user_input_id).strip().upper()
         for tx in tx_list:
-            # tx status: SUCCESS, orderType: C2C / PAY
+            tx_id = str(tx.get("transactionId") or "").upper()
+            binance_order_id = str(tx.get("orderId") or "").upper()
             note = str(tx.get("note") or "").upper()
-            order_id_field = str(tx.get("orderId") or "").upper()
             amount = float(tx.get("amount") or 0)
             currency = str(tx.get("currency") or "").upper()
             
-            # Cocokkan jika note mengandung order ID atau txID
-            matched_id = target_oid in note or target_oid in order_id_field
+            # Cek kecocokan: apakah input user cocok dengan Transaction ID, Order ID, atau Note
+            matched_id = (target_clean == tx_id) or (target_clean == binance_order_id) or (target_clean in note) or (tx_id in target_clean)
             matched_amount = amount >= float(expected_amount) and currency in ("USDT", "BUSD", "USDC")
             
             if matched_id and matched_amount:
@@ -1233,35 +1231,30 @@ async def confirm_payment(query, context, order_id):
         await query.answer("Order status has already updated.")
         return
 
-    # 1. Jika API Key Binance sudah diisi, lakukan verifikasi otomatis
+    # 1. Jika API Key Binance sudah diisi, minta user mengirimkan Transaction ID / Order ID Binance mereka
     if config.BINANCE_API_KEY and config.BINANCE_API_SECRET:
-        await query.answer("Checking Binance Pay ledger... ⏳")
-        verification = await asyncio.to_thread(
-            verify_binance_pay_transaction, order_id, order["total"]
+        context.user_data["awaiting_binance_tx_for"] = order_id
+        text = (
+            f"📲 <b>Enter Binance Pay Transaction ID</b>\n"
+            f"────────────────────\n\n"
+            f"Please paste your <b>Transaction ID</b> or <b>Order ID</b> from your Binance Pay transfer receipt in the chat below 👇\n\n"
+            f"💡 <i>Example: 284918294819481</i>"
         )
-        if verification.get("ok"):
-            # Dana terverifikasi masuk di Binance! Langsung kirim produk
-            await complete_order(order_id, verification.get("txId") or order_id, context)
-            text, kb = ui.success_page(order_id)
-            if query.message:
-                if query.message.photo:
-                    try:
-                        await query.message.delete()
-                    except Exception:
-                        pass
-                    await app.bot.send_message(chat_id=query.message.chat_id, text=text, parse_mode="HTML", reply_markup=kb)
-                else:
-                    await safe_edit(chat_id=query.message.chat_id, message_id=query.message.message_id, text=text, reply_markup=kb)
-            return
-        elif verification.get("reason") == "TRANSACTION_NOT_FOUND":
-            await query.answer("❌ Transaction not found yet! Please make sure you transferred the exact amount and included the Order ID in your transfer notes.", show_alert=True)
-            return
-        else:
-            err_msg = verification.get("reason", "API_ERROR")
-            await query.answer(f"Binance API check failed ({err_msg}).", show_alert=True)
-            return
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("« Cancel", callback_data="home")]
+        ])
+        if query.message:
+            if query.message.photo:
+                try:
+                    await query.message.delete()
+                except Exception:
+                    pass
+                await app.bot.send_message(chat_id=query.message.chat_id, text=text, parse_mode="HTML", reply_markup=kb)
+            else:
+                await safe_edit(chat_id=query.message.chat_id, message_id=query.message.message_id, text=text, reply_markup=kb)
+        return
 
-    # 2. Jika API key belum diset di Render, peringatkan user / tolak otomatis
+    # 2. Jika API key belum diset di Render, tolak otomatis
     await query.answer("Automatic verification is not configured yet. Please check BINANCE_API_KEY in Render.", show_alert=True)
     return
 
@@ -1688,8 +1681,48 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-    # 1. Cek jika user sedang mengetik custom quantity
-    awaiting_pid = context.user_data.get("awaiting_qty_for")
+    # 0.5. Cek jika user sedang mengirimkan Transaction ID Binance Pay
+    awaiting_tx_oid = context.user_data.get("awaiting_binance_tx_for")
+    if awaiting_tx_oid and len(text) >= 5:
+        target_oid = awaiting_tx_oid
+        order = db.get_order(target_oid)
+        if not order:
+            context.user_data.pop("awaiting_binance_tx_for", None)
+            await update.message.reply_text("Order expired or not found. Please start a new order with /start.")
+            return
+
+        loading_msg = await update.message.reply_text("🔍 <i>Verifying transaction with Binance... Please wait.</i>", parse_mode="HTML")
+        verification = await asyncio.to_thread(
+            verify_binance_pay_transaction, text, order["total"]
+        )
+
+        if verification.get("ok"):
+            context.user_data.pop("awaiting_binance_tx_for", None)
+            try:
+                await loading_msg.delete()
+            except Exception:
+                pass
+            await complete_order(target_oid, verification.get("txId") or text, context)
+            success_txt, success_kb = ui.success_page(target_oid)
+            await update.message.reply_text(success_txt, parse_mode="HTML", reply_markup=success_kb)
+            return
+        elif verification.get("reason") == "TRANSACTION_NOT_FOUND":
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("« Cancel", callback_data="home")]
+            ])
+            await loading_msg.edit_text(
+                "❌ <b>Transaction ID Not Found</b>\n────────────────────\n"
+                "We could not find a matching incoming payment on Binance.\n\n"
+                "• Make sure you sent the exact total amount in USDT.\n"
+                "• Please double-check your <b>Transaction ID</b> and send it again below 👇",
+                parse_mode="HTML",
+                reply_markup=kb
+            )
+            return
+        else:
+            err_reason = verification.get("reason", "API_ERROR")
+            await loading_msg.edit_text(f"⚠️ Binance check error ({err_reason}). Please contact support if you already transferred.", parse_mode="HTML")
+            return
     if awaiting_pid and text.isdigit():
         target_qty = int(text)
         product = get_product(awaiting_pid)
