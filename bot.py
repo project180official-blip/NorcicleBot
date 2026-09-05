@@ -1254,8 +1254,11 @@ async def confirm_payment(query, context, order_id):
                     await safe_edit(chat_id=query.message.chat_id, message_id=query.message.message_id, text=text, reply_markup=kb)
             return
         elif verification.get("reason") == "TRANSACTION_NOT_FOUND":
-            await query.answer("Transaction not found yet. Please make sure you included Order ID in notes!", show_alert=True)
-            # Jangan langsung batalkan, beri tahu user untuk coba lagi atau submit ke admin
+            await query.answer("❌ Transaction not found yet! Please make sure you transferred the exact amount and included the Order ID in your transfer notes.", show_alert=True)
+            return
+        elif verification.get("reason", "").startswith("API_ERROR"):
+            logger.warning("Binance API returned error: %s", verification.get("reason"))
+            await query.answer(f"Binance verification error ({verification.get('reason')}). Submitted to admin for review.", show_alert=True)
 
     # 2. Fallback: Verifikasi manual oleh admin jika belum ada API key atau belum terdeteksi
     db.set_order_status(order_id, "AWAITING_ADMIN")
