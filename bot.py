@@ -986,60 +986,58 @@ async def paid_check(query, context, chat_id, msg_id):
 
 
 NETFLIX_VPN_TERMS = (
-    "🟥 TUTORIAL NETFLIX: NONTON MENGGUNAKAN VPN\n\n"
-    "CARA PENGGUNAAN:\n"
-    "1. Login akun seperti biasa tanpa menggunakan VPN.\n"
-    "2. Setelah berhasil login, pilih film/movie yang ingin ditonton.\n"
-    "3. Nyalakan VPN terlebih dahulu sebelum menekan tombol PLAY. "
-    "Bebas menggunakan region/server VPN mana pun.\n"
-    "4. Setelah film berhasil diputar, VPN boleh dimatikan dan film tetap dapat dilanjutkan. "
-    "Jika ingin tetap menggunakan VPN, juga tidak masalah.\n\n"
-    "Jika tidak bisa login menggunakan password, silakan login menggunakan OTP.\n\n"
-    "📩 AKSES OTP:\n"
+    "🟥 NETFLIX TUTORIAL: STREAMING WITH VPN\n\n"
+    "HOW TO USE:\n"
+    "1. Log in to the account as usual without connecting to VPN.\n"
+    "2. Once logged in successfully, choose the movie/show you wish to watch.\n"
+    "3. Turn on your VPN before clicking PLAY. "
+    "Feel free to connect to any VPN server/region.\n"
+    "4. Once video starts playing, you may turn off the VPN and continue watching. "
+    "Leaving VPN on is also fine.\n\n"
+    "If you cannot log in with the password, please use OTP login.\n\n"
+    "📩 OTP INBOX ACCESS:\n"
     "https://mailku.online/mailbox\n\n"
-    "⚠️ KETENTUAN PEMBELIAN\n"
-    "> Harga produk: Rp12.000\n"
-    "> Mohon pahami cara penggunaan sebelum melakukan pembelian.\n"
-    "> Tidak ada refund apabila akun mengalami wiped, banned, atau kendala lainnya setelah pembelian.\n"
-    "> Pastikan sudah memahami seluruh ketentuan sebelum membeli.\n"
-    "> MEMBELI = SETUJU dengan seluruh ketentuan.\n\n"
-    "Jika masih bingung mengenai cara penggunaan atau proses login, "
-    "dipersilakan bertanya terlebih dahulu.\n\n"
+    "⚠️ TERMS OF PURCHASE\n"
+    "> Please understand the instructions before making a purchase.\n"
+    "> No refunds if account is wiped, banned, or encounters issues post-purchase.\n"
+    "> Ensure you have read and agreed to all conditions before buying.\n"
+    "> PURCHASING = AGREEING to all terms & conditions.\n\n"
+    "If you have questions regarding usage or login, feel free to contact support.\n\n"
 )
 
 GENERAL_TERMS = (
-    "== KETENTUAN & CARA PEMAKAIAN ==\n\n"
-    "> Simpan file ini dengan aman dan jangan bagikan kepada siapa pun.\n"
-    "> Baca petunjuk aktivasi produk dengan teliti sebelum memulai.\n"
-    "> Pastikan akun tujuan sudah sesuai dengan ketentuan produk.\n"
-    "> Garansi hanya berlaku sesuai ketentuan pada tiap produk.\n\n"
+    "== TERMS & INSTRUCTIONS ==\n\n"
+    "> Keep this file secure and do not share it with anyone.\n"
+    "> Read activation instructions carefully before proceeding.\n"
+    "> Ensure target account meets all specified product requirements.\n"
+    "> Warranty applies strictly according to terms specified for each product.\n\n"
 )
 
 GOOGLE_AI_PRO_TERMS = (
-    "📬 BACA SEBELUM AKTIVASI:\n"
-    "* Periksa akun email tujuan terlebih dahulu sebelum menekan tombol \"Aktivasi\".\n"
-    "* Hindari aktivasi pada akun email yang telah memiliki langganan aktif Google Plus, Pro, atau Ultra.\n"
-    "* Pastikan Anda telah masuk ke akun email yang dituju saat proses aktivasi. Akun yang sedang aktif dapat diperiksa pada pojok kanan atas layar.\n\n"
-    "🛡️ KETENTUAN & GARANSI:\n"
-    "> ➡️ Tersedia garansi 6 jam untuk memastikan proses aktivasi dan link berjalan dengan baik.\n"
-    "> ➡️ Langganan akan langsung aktif pada akun Anda setelah aktivasi berhasil.\n"
-    "> ➡️ Tidak tersedia garansi toko setelah proses aktivasi selesai.\n"
-    "> ➡️ Garansi hanya berlaku untuk proses aktivasi.\n\n"
-    "🆘 PEMBERITAHUAN PENTING:\n"
-    "> Karena paket ini dikelola oleh Jio, langganan Google AI Pro akan berakhir jika paket SIM Jio menjadi tidak aktif. "
-    "Inilah alasan mengapa produk ini memiliki garansi nol (tidak ada garansi) setelah aktivasi. "
-    "Namun, jika paket SIM Jio diperpanjang secara rutin oleh pengelola, maka langganan Google AI Pro akan tetap aktif.\n\n"
-    "⚠️ Catatan:\n"
-    "> Kode redeem ini hanya dapat digunakan 1 kali untuk setiap akun.\n"
+    "📬 READ BEFORE ACTIVATION:\n"
+    "* Verify your destination email account before clicking 'Activate'.\n"
+    "* Do not activate on email accounts with an existing active Google Plus, Pro, or Ultra subscription.\n"
+    "* Ensure you are signed into the target account during activation. Check top-right corner to verify active user.\n\n"
+    "🛡️ TERMS & WARRANTY:\n"
+    "> ➡️ 6-hour replacement guarantee to ensure activation link functions properly.\n"
+    "> ➡️ Subscription activates instantly on your account upon completion.\n"
+    "> ➡️ Store warranty ends once activation is verified successful.\n"
+    "> ➡️ Guarantee applies strictly to the activation process.\n\n"
+    "🆘 IMPORTANT NOTICE:\n"
+    "> This plan is managed via Jio; subscription will terminate if the underlying SIM package expires. "
+    "Therefore, this item carries zero warranty post-activation. "
+    "However, as long as Jio SIM renewals are maintained, access remains active.\n\n"
+    "⚠️ Note:\n"
+    "> Redeem code is strictly single-use per account.\n"
 )
 
 LEONARDO_AI_TERMS = (
-    "🎨 CARA LOGIN LEONARDO AI:\n"
-    "1. Masuk ke web leonardo.ai\n"
-    "2. Klik \"Login with Canva\"\n"
-    "3. Masukkan email yang sudah dibeli\n"
-    "4. Tunggu sampai masuk ke tahap OTP\n"
-    "5. Ambil OTP di web ini: https://bototp.site\n"
+    "🎨 HOW TO LOGIN TO LEONARDO AI:\n"
+    "1. Visit leonardo.ai\n"
+    "2. Click 'Login with Canva'\n"
+    "3. Enter the purchased email credential\n"
+    "4. Proceed to OTP verification step\n"
+    "5. Retrieve your OTP code at: https://bototp.site\n"
 )
 
 
@@ -1048,18 +1046,18 @@ async def send_product_file(context, order, contents):
         f"PAYMENT SUCCESSFUL\n"
         f"Order ID: {order['order_id']}\n"
         f"Product: {order['product_name']} x{order['qty']}\n"
-        f"Total: Rp{order['total']:,}\n"
+        f"Total: {ui.fmt_price(order['total'])}\n"
         f"Timestamp: {db.utcnow().isoformat()}\n\n"
         f"== DIGITAL PRODUCT ITEMS ==\n\n"
     )
     for i, content in enumerate(contents, 1):
         file_text += f"Item {i}:\n{content}\n\n"
     file_text += GENERAL_TERMS
-    if "google" in order["product_name"].lower():
+    if "google" in order["product_name"].lower() or "gemini" in order["product_name"].lower():
         file_text += GOOGLE_AI_PRO_TERMS
     if "netflix" in order["product_name"].lower() or "netflx" in order["product_name"].lower():
         file_text += NETFLIX_VPN_TERMS
-    if "leonardo ai" in order["product_name"].lower():
+    if "leonardo" in order["product_name"].lower():
         file_text += LEONARDO_AI_TERMS
     file_text += "Thank you for purchasing!\n"
     buf = io.BytesIO(file_text.encode("utf-8"))
