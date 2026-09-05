@@ -9,12 +9,23 @@ BRAND = "NORCICLE"
 
 
 # Custom Animated Emoji IDs (Telegram Premium)
+EMOJI_STORE = '<tg-emoji emoji-id="5938274774756103272">🏪</tg-emoji>'
 EMOJI_STAR = '<tg-emoji emoji-id="5224257782013769471">⭐</tg-emoji>'
 EMOJI_VERIFIED = '<tg-emoji emoji-id="5411309092427834175">✅</tg-emoji>'
+EMOJI_CLOCK = '<tg-emoji emoji-id="5927066722589742879">⏰</tg-emoji>'
+EMOJI_MONEY = '<tg-emoji emoji-id="5417924076503062111">💰</tg-emoji>'
+EMOJI_CART = '<tg-emoji emoji-id="5271783639548441015">🛒</tg-emoji>'
 EMOJI_LIGHTNING = '<tg-emoji emoji-id="5222184635659747645">⚡</tg-emoji>'
 EMOJI_DOLLAR = '<tg-emoji emoji-id="5224301028039491729">💲</tg-emoji>'
 EMOJI_CHECK = '<tg-emoji emoji-id="5222314103153917906">✅</tg-emoji>'
 EMOJI_HEART = '<tg-emoji emoji-id="5273813153329719141">❤️</tg-emoji>'
+
+# Dedicated Animated Product Logos
+EMOJI_GEMINI = '<tg-emoji emoji-id="5951817721468424817">🤖</tg-emoji>'
+EMOJI_HBO = '<tg-emoji emoji-id="5298588152485651370">📺</tg-emoji>'
+EMOJI_CAPCUT = '<tg-emoji emoji-id="5474521476197536994">🖤</tg-emoji>'
+EMOJI_NETFLIX = '<tg-emoji emoji-id="5355165443143252480">📺</tg-emoji>'
+EMOJI_DEFAULT_PROD = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
 
 
 def esc(s):
@@ -76,14 +87,28 @@ def get_product_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
     if "gemini" in name or pid == "P0001":
+        return EMOJI_GEMINI
+    if "hbo" in name or "max" in name:
+        return EMOJI_HBO
+    if "capcut" in name or pid == "P0003":
+        return EMOJI_CAPCUT
+    if "netflix" in name or pid == "P0005":
+        return EMOJI_NETFLIX
+    return EMOJI_DEFAULT_PROD
+
+
+def get_product_btn_icon(product):
+    name = str(product.get("name", "")).lower()
+    pid = str(product.get("id", "")).upper()
+    if "gemini" in name or pid == "P0001":
         return "✨"
     if "hbo" in name or "max" in name:
         return "🎬"
-    if "capcut" in name:
+    if "capcut" in name or pid == "P0003":
         return "✂️"
-    if "netflix" in name:
+    if "netflix" in name or pid == "P0005":
         return "🍿"
-    return product.get("emoji") or "💎"
+    return "💎"
 
 
 def product_line(p):
@@ -103,11 +128,11 @@ def home_text(user_name=None):
     name_str = f", <b>{esc(user_name)}</b>" if user_name else ""
 
     text = (
-        f"{EMOJI_STAR} <b>{BRAND} OFFICIAL STORE</b>{name_str} {EMOJI_VERIFIED}\n"
+        f"{EMOJI_STORE} <b>{BRAND} OFFICIAL STORE</b>{name_str} {EMOJI_VERIFIED}\n"
         f"────────────────────\n"
-        f"{EMOJI_LIGHTNING} <i>Instant Automated 24/7 Delivery</i>\n"
-        f"{EMOJI_DOLLAR} <i>Direct Wholesale Digital Subscriptions</i>\n\n"
-        f"<b>🛒 Available Products:</b>\n"
+        f"{EMOJI_CLOCK} <i>Instant Automated 24/7 Delivery</i>\n"
+        f"{EMOJI_MONEY} <i>Direct Wholesale Digital Subscriptions</i>\n\n"
+        f"<b>{EMOJI_CART} Available Products:</b>\n"
         f"<i>Tap any item below to select and purchase:</i>"
     )
 
@@ -117,14 +142,14 @@ def home_text(user_name=None):
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 0"
         pname = str(p.get("name", "")).lower()
-        icon = get_product_icon(p)
+        btn_icon = get_product_btn_icon(p)
         if p.get("id") == "P0001" or "gemini" in pname:
             price_tag = "$0.80"
         else:
             price_tag = fmt_price(p['price'])
         rows.append([
             InlineKeyboardButton(
-                f"🟢 {icon} {esc(p['name'])} • {price_tag} [{stock_badge}]",
+                f"🟢 {btn_icon} {esc(p['name'])} • {price_tag} [{stock_badge}]",
                 callback_data=f"product:{p['id']}"
             )
         ])
@@ -215,10 +240,10 @@ def catalog_text():
 
     rows = []
     for i, p in enumerate(products, 1):
-        icon = get_product_icon(p)
+        btn_icon = get_product_btn_icon(p)
         rows.append([
             InlineKeyboardButton(
-                f"🟢 {icon} Buy #{i}: {esc(p['name'])}",
+                f"🟢 {btn_icon} Buy #{i}: {esc(p['name'])}",
                 callback_data=f"product:{p['id']}"
             )
         ])
@@ -245,7 +270,7 @@ def product_page(product, qty):
         promo_badge = f"\n{EMOJI_STAR} <i>Wholesale Tiers: 2-4 pcs = $0.80 | 5-9 pcs = $0.70 | 10+ pcs = $0.50</i>\n⚠️ <b>Min. Purchase: 2 pcs</b>"
 
     text = (
-        f"{EMOJI_VERIFIED} {icon} <b>{esc(product['name'])}</b>\n"
+        f"{icon} <b>{esc(product['name'])}</b> {EMOJI_VERIFIED}\n"
         f"────────────────────\n\n"
         f"📖 <b>Description:</b>\n"
         f"{esc(product['description'])}\n"
@@ -253,10 +278,10 @@ def product_page(product, qty):
         f"────────────────────\n"
         f"{EMOJI_DOLLAR} <b>Unit Price :</b> <b>{fmt_price(unit_price)}</b>\n"
         f"📦 <b>Vault Stock:</b> {stock_badge}\n"
-        f"{EMOJI_LIGHTNING} <b>Fulfillment:</b> Instant Automated Delivery\n"
+        f"{EMOJI_CLOCK} <b>Fulfillment:</b> Instant Automated 24/7\n"
         f"────────────────────\n\n"
         f"🔢 <b>Quantity   :</b> <b>{qty}x</b>\n"
-        f"💰 <b>Total Due  :</b> <b>{fmt_price(total)}</b>\n\n"
+        f"{EMOJI_MONEY} <b>Total Due  :</b> <b>{fmt_price(total)}</b>\n\n"
         f"💡 <i>Tip: Adjust with [-] / [+] or send a number directly in chat.</i>"
     )
 
@@ -389,7 +414,7 @@ def payment_method_page(order, usdt_amount=None):
         f"────────────────────\n\n"
         f"{icon} <b>Item     :</b> {esc(order['product_name'])}\n"
         f"🔢 <b>Quantity :</b> {order['qty']}x\n"
-        f"{EMOJI_DOLLAR} <b>Total Due:</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
+        f"{EMOJI_MONEY} <b>Total Due:</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
         f"🧾 <b>Order ID :</b> <code>{order['order_id']}</code>\n\n"
         f"────────────────────\n"
         f"Select your preferred crypto payment channel below:"
