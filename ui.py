@@ -97,6 +97,20 @@ def get_product_icon(product):
     return EMOJI_DEFAULT_PROD
 
 
+def get_product_emoji_id(product):
+    name = str(product.get("name", "")).lower()
+    pid = str(product.get("id", "")).upper()
+    if "gemini" in name or pid == "P0001":
+        return "5951817721468424817"
+    if "hbo" in name or "max" in name:
+        return "5298588152485651370"
+    if "capcut" in name or pid == "P0003":
+        return "5474521476197536994"
+    if "netflix" in name or pid == "P0005":
+        return "5355165443143252480"
+    return "5472246178617765188"
+
+
 def get_product_btn_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
@@ -136,23 +150,27 @@ def home_text(user_name=None):
     )
 
     rows = []
-    # 1 baris per produk tombol penuh, jelas, dan langsung diklik user
+    # Baris tombol produk dengan icon_custom_emoji_id & style success (hijau)
     for p in products:
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Sold Out"
         pname = str(p.get("name", "")).lower()
-        btn_icon = get_product_btn_icon(p)
+        emoji_id = get_product_emoji_id(p)
         if p.get("id") == "P0001" or "gemini" in pname:
             price_tag = "$0.80"
         else:
             price_tag = fmt_price(p['price'])
 
-        rows.append([
-            InlineKeyboardButton(
-                f"{btn_icon} {p['name']} • {price_tag} [{stock_badge}]",
-                callback_data=f"product:{p['id']}"
-            )
-        ])
+        btn = InlineKeyboardButton(
+            f"{p['name']} • {price_tag} [{stock_badge}]",
+            callback_data=f"product:{p['id']}"
+        )
+        try:
+            setattr(btn, "icon_custom_emoji_id", emoji_id)
+            setattr(btn, "style", "success")
+        except Exception:
+            pass
+        rows.append([btn])
 
     # Navigasi Menu
     rows.append([
@@ -243,18 +261,22 @@ def catalog_text():
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Sold Out"
         pname = str(p.get("name", "")).lower()
-        btn_icon = get_product_btn_icon(p)
+        emoji_id = get_product_emoji_id(p)
         if p.get("id") == "P0001" or "gemini" in pname:
             price_tag = "$0.80"
         else:
             price_tag = fmt_price(p['price'])
 
-        rows.append([
-            InlineKeyboardButton(
-                f"{btn_icon} {p['name']} • {price_tag} [{stock_badge}]",
-                callback_data=f"product:{p['id']}"
-            )
-        ])
+        btn = InlineKeyboardButton(
+            f"{p['name']} • {price_tag} [{stock_badge}]",
+            callback_data=f"product:{p['id']}"
+        )
+        try:
+            setattr(btn, "icon_custom_emoji_id", emoji_id)
+            setattr(btn, "style", "success")
+        except Exception:
+            pass
+        rows.append([btn])
 
     rows.append(
         [
@@ -303,21 +325,27 @@ def product_page(product, qty):
             ],
         ]
     else:
-        rows = [
-            [
-                InlineKeyboardButton("➖", callback_data=f"qtydec:{product['id']}"),
-                InlineKeyboardButton(f"Qty: {qty}", callback_data="noop"),
-                InlineKeyboardButton("➕", callback_data=f"qtyinc:{product['id']}"),
-            ],
-            [
-                InlineKeyboardButton("✏️ Custom Quantity", callback_data=f"customqty:{product['id']}"),
-            ],
-            [InlineKeyboardButton(f"🟢 ⚡ Order Now • {fmt_price(total)}", callback_data=f"buy:{product['id']}")],
-            [
-                InlineKeyboardButton("« Catalog", callback_data="catalog"),
-                InlineKeyboardButton("« Menu", callback_data="home"),
-            ],
-        ]
+            buy_btn = InlineKeyboardButton(f"Order Now • {fmt_price(total)}", callback_data=f"buy:{product['id']}")
+            try:
+                setattr(buy_btn, "style", "success")
+                setattr(buy_btn, "icon_custom_emoji_id", "5222184635659747645")
+            except Exception:
+                pass
+            rows = [
+                [
+                    InlineKeyboardButton("➖", callback_data=f"qtydec:{product['id']}"),
+                    InlineKeyboardButton(f"Qty: {qty}", callback_data="noop"),
+                    InlineKeyboardButton("➕", callback_data=f"qtyinc:{product['id']}"),
+                ],
+                [
+                    InlineKeyboardButton("✏️ Custom Quantity", callback_data=f"customqty:{product['id']}"),
+                ],
+                [buy_btn],
+                [
+                    InlineKeyboardButton("« Catalog", callback_data="catalog"),
+                    InlineKeyboardButton("« Menu", callback_data="home"),
+                ],
+            ]
     return text, InlineKeyboardMarkup(rows)
 
 
@@ -428,11 +456,15 @@ def payment_method_page(order, usdt_amount=None):
         f"────────────────────\n"
         f"Select your preferred crypto payment channel below:"
     )
+    b1 = InlineKeyboardButton("Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}")
+    b2 = InlineKeyboardButton("USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}")
+    try:
+        setattr(b1, "style", "success")
+        setattr(b2, "style", "success")
+    except Exception:
+        pass
     buttons = [
-        [
-            InlineKeyboardButton("🟢 🟡 Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}"),
-            InlineKeyboardButton("🟢 🌐 USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}"),
-        ],
+        [b1, b2],
         [InlineKeyboardButton("« Cancel & Return", callback_data="home")],
     ]
     return text, InlineKeyboardMarkup(buttons)
@@ -459,6 +491,13 @@ def binance_pay_page(order, usdt_amount=None):
         f"────────────────────\n"
         f"<i>Tap the button below after completing your transfer:</i>"
     )
+    pay_btn = InlineKeyboardButton("I Have Transferred", callback_data=f"confirm_pay:{order['order_id']}")
+    try:
+        setattr(pay_btn, "style", "success")
+        setattr(pay_btn, "icon_custom_emoji_id", "5411309092427834175")
+    except Exception:
+        pass
+
     keyboard = InlineKeyboardMarkup(
         [
             [
@@ -467,12 +506,7 @@ def binance_pay_page(order, usdt_amount=None):
                     copy_text=CopyTextButton(text=pay_id),
                 )
             ],
-            [
-                InlineKeyboardButton(
-                    "🟢 ✅ I Have Transferred",
-                    callback_data=f"confirm_pay:{order['order_id']}",
-                )
-            ],
+            [pay_btn],
             [InlineKeyboardButton("🌐 Switch to USDT BEP20", callback_data=f"pay_usdt:{order['order_id']}")],
             [InlineKeyboardButton("« Return to Menu", callback_data="home")],
         ]
@@ -499,6 +533,13 @@ def crypto_usdt_page(order, usdt_amount=None):
         f"────────────────────\n"
         f"<i>Tap the button below after broadcasting transfer:</i>"
     )
+    pay_btn2 = InlineKeyboardButton("I Have Transferred", callback_data=f"confirm_pay:{order['order_id']}")
+    try:
+        setattr(pay_btn2, "style", "success")
+        setattr(pay_btn2, "icon_custom_emoji_id", "5411309092427834175")
+    except Exception:
+        pass
+
     keyboard = InlineKeyboardMarkup(
         [
             [
@@ -507,12 +548,7 @@ def crypto_usdt_page(order, usdt_amount=None):
                     copy_text=CopyTextButton(text=wallet),
                 )
             ],
-            [
-                InlineKeyboardButton(
-                    "🟢 ✅ I Have Transferred",
-                    callback_data=f"confirm_pay:{order['order_id']}",
-                )
-            ],
+            [pay_btn2],
             [InlineKeyboardButton("🟡 Switch to Binance Pay", callback_data=f"pay_binance:{order['order_id']}")],
             [InlineKeyboardButton("« Return to Menu", callback_data="home")],
         ]
