@@ -127,53 +127,32 @@ def home_text(user_name=None):
     products = db.get_active_products()
     name_str = f", <b>{esc(user_name)}</b>" if user_name else ""
 
-    prod_lines = []
-    for i, p in enumerate(products, 1):
-        avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
-        pname = str(p.get("name", "")).lower()
-        icon = get_product_icon(p)
-        if p.get("id") == "P0001" or "gemini" in pname:
-            price_tag = "$0.80"
-        else:
-            price_tag = fmt_price(p['price'])
-        prod_lines.append(f"{i}. {icon} <b>{esc(p['name'])}</b>\n   └ {price_tag} • {stock_badge}")
-
-    catalog_overview = "\n\n".join(prod_lines)
-
     text = (
         f"{EMOJI_STORE} <b>{BRAND} OFFICIAL STORE</b>{name_str} {EMOJI_VERIFIED}\n"
         f"────────────────────\n"
         f"{EMOJI_CLOCK} <i>Instant Automated 24/7 Delivery</i>\n"
         f"{EMOJI_MONEY} <i>Direct Wholesale Digital Subscriptions</i>\n\n"
-        f"<b>{EMOJI_CART} Live Vault Catalog:</b>\n"
-        f"{catalog_overview}\n\n"
-        f"────────────────────\n"
-        f"<i>Select an item below to purchase:</i>"
+        f"<b>{EMOJI_CART} Select a product below to purchase:</b>"
     )
 
     rows = []
-    # Baris tombol grid 2 kolom rapi dan bersih
-    grid_row = []
-    for i, p in enumerate(products, 1):
-        short_name = p['name'].replace("Pro", "").replace("Month", "M").replace("Pre 4K", "4K").strip()
+    # 1 baris per produk tombol penuh, jelas, dan langsung diklik user
+    for p in products:
+        avail = db.count_available(p["id"])
+        stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Sold Out"
         pname = str(p.get("name", "")).lower()
+        btn_icon = get_product_btn_icon(p)
         if p.get("id") == "P0001" or "gemini" in pname:
             price_tag = "$0.80"
         else:
             price_tag = fmt_price(p['price'])
 
-        grid_row.append(
+        rows.append([
             InlineKeyboardButton(
-                f"🟢 {i}. {short_name} • {price_tag}",
+                f"{btn_icon} {p['name']} • {price_tag} [{stock_badge}]",
                 callback_data=f"product:{p['id']}"
             )
-        )
-        if len(grid_row) == 2:
-            rows.append(grid_row)
-            grid_row = []
-    if grid_row:
-        rows.append(grid_row)
+        ])
 
     # Navigasi Menu
     rows.append([
@@ -260,26 +239,22 @@ def catalog_text():
     )
 
     rows = []
-    grid_row = []
-    for i, p in enumerate(products, 1):
-        short_name = p['name'].replace("Pro", "").replace("Month", "M").replace("Pre 4K", "4K").strip()
+    for p in products:
+        avail = db.count_available(p["id"])
+        stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Sold Out"
         pname = str(p.get("name", "")).lower()
+        btn_icon = get_product_btn_icon(p)
         if p.get("id") == "P0001" or "gemini" in pname:
             price_tag = "$0.80"
         else:
             price_tag = fmt_price(p['price'])
 
-        grid_row.append(
+        rows.append([
             InlineKeyboardButton(
-                f"🟢 {i}. {short_name} • {price_tag}",
+                f"{btn_icon} {p['name']} • {price_tag} [{stock_badge}]",
                 callback_data=f"product:{p['id']}"
             )
-        )
-        if len(grid_row) == 2:
-            rows.append(grid_row)
-            grid_row = []
-    if grid_row:
-        rows.append(grid_row)
+        ])
 
     rows.append(
         [
