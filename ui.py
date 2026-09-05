@@ -26,7 +26,7 @@ EMOJI_CLAUDE = '<tg-emoji emoji-id="5899837428797020489">😒</tg-emoji>'
 EMOJI_HBO = '<tg-emoji emoji-id="5298588152485651370">📺</tg-emoji>'
 EMOJI_CAPCUT = '<tg-emoji emoji-id="5474521476197536994">🖤</tg-emoji>'
 EMOJI_NETFLIX = '<tg-emoji emoji-id="5355165443143252480">📺</tg-emoji>'
-EMOJI_CHATGPT = '<tg-emoji emoji-id="5951817721468424817">🤖</tg-emoji>'
+EMOJI_CHATGPT = '<tg-emoji emoji-id="5796185041717433060">😺</tg-emoji>'
 EMOJI_GROK = '<tg-emoji emoji-id="5902340522852227618">😐</tg-emoji>'
 EMOJI_DEFAULT_PROD = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
 
@@ -112,7 +112,7 @@ def get_product_emoji_id(product):
     if "claude" in name or pid == "P0006":
         return "5899837428797020489"
     if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
-        return "5951817721468424817"
+        return "5796185041717433060"
     if "grok" in name or pid == "P0008":
         return "5902340522852227618"
     if "gemini" in name or pid == "P0001":
