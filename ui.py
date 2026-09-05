@@ -127,13 +127,29 @@ def home_text(user_name=None):
     products = db.get_active_products()
     name_str = f", <b>{esc(user_name)}</b>" if user_name else ""
 
+    prod_lines = []
+    for i, p in enumerate(products, 1):
+        avail = db.count_available(p["id"])
+        stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Out of Stock"
+        pname = str(p.get("name", "")).lower()
+        icon = get_product_icon(p)
+        if p.get("id") == "P0001" or "gemini" in pname:
+            price_tag = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
+        else:
+            price_tag = fmt_price(p['price'])
+        prod_lines.append(f"{i}. {icon} <b>{esc(p['name'])}</b>\n   └ 💵 <b>{price_tag}</b> • {stock_badge}")
+
+    catalog_overview = "\n\n".join(prod_lines)
+
     text = (
         f"{EMOJI_STORE} <b>{BRAND} OFFICIAL STORE</b>{name_str} {EMOJI_VERIFIED}\n"
         f"────────────────────\n"
         f"{EMOJI_CLOCK} <i>Instant Automated 24/7 Delivery</i>\n"
         f"{EMOJI_MONEY} <i>Direct Wholesale Digital Subscriptions</i>\n\n"
-        f"<b>{EMOJI_CART} Available Products:</b>\n"
-        f"<i>Tap any item below to select and purchase:</i>"
+        f"<b>{EMOJI_CART} Live Vault Catalog:</b>\n"
+        f"{catalog_overview}\n\n"
+        f"────────────────────\n"
+        f"<i>Tap a product button below to buy:</i>"
     )
 
     rows = []
@@ -149,7 +165,7 @@ def home_text(user_name=None):
             price_tag = fmt_price(p['price'])
         rows.append([
             InlineKeyboardButton(
-                f"🟢 {btn_icon} {esc(p['name'])} • {price_tag} [{stock_badge}]",
+                f"🟢 {btn_icon} Buy #{i}: {esc(p['name'])} • {price_tag} [{stock_badge}]",
                 callback_data=f"product:{p['id']}"
             )
         ])
