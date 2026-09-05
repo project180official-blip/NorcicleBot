@@ -291,28 +291,36 @@ def product_page(product, qty):
     unit_price, total = calculate_item_price(product, qty)
     sold_out = avail < 1
 
-    stock_badge = f"🟢 In Stock ({avail} available)" if avail > 0 else "🔴 Out of Stock"
-    
+    stock_badge = f"🟢 {avail} in stock" if avail > 0 else "🔴 Out of Stock"
     pname = str(product.get("name", "")).lower()
     icon = get_product_icon(product)
-    promo_badge = ""
+    
+    tier_block = ""
     if product.get("id") == "P0001" or "gemini" in pname:
-        promo_badge = f"\n{EMOJI_STAR} <i>Wholesale Tiers: 2-4 pcs = $0.80 | 5-9 pcs = $0.70 | 10+ pcs = $0.50</i>\n⚠️ <b>Min. Purchase: 2 pcs</b>"
+        tier_block = (
+            f"\n💎 <b>Wholesale Tiers:</b>\n"
+            f"• 2 – 4 pcs : <b>$0.80</b> / ea\n"
+            f"• 5 – 9 pcs : <b>$0.70</b> / ea\n"
+            f"• 10+ pcs   : <b>$0.50</b> / ea\n"
+            f"<i>(Minimum order: 2 pcs)</i>\n"
+        )
+
+    desc = esc(product['description']).strip()
+    if desc.startswith("✨"):
+        desc = desc.lstrip("✨").strip()
 
     text = (
         f"{icon} <b>{esc(product['name'])}</b> {EMOJI_VERIFIED}\n"
-        f"────────────────────\n\n"
-        f"📖 <b>Description:</b>\n"
-        f"{esc(product['description'])}\n"
-        f"{promo_badge}\n\n"
         f"────────────────────\n"
-        f"💵 <b>Unit Price :</b> <b>{fmt_price(unit_price)}</b>\n"
-        f"📦 <b>Vault Stock:</b> {stock_badge}\n"
-        f"{EMOJI_CLOCK} <b>Fulfillment:</b> Instant Automated 24/7\n"
-        f"────────────────────\n\n"
-        f"🔢 <b>Quantity   :</b> <b>{qty}x</b>\n"
-        f"💰 <b>Total Due  :</b> <b>{fmt_price(total)}</b>\n\n"
-        f"💡 <i>Tip: Adjust with [-] / [+] or send a number directly in chat.</i>"
+        f"{desc}\n"
+        f"{tier_block}\n"
+        f"────────────────────\n"
+        f"• <b>Unit Price:</b> {fmt_price(unit_price)}\n"
+        f"• <b>Available:</b> {stock_badge}\n"
+        f"• <b>Delivery :</b> Instant Automated 24/7\n\n"
+        f"🛒 <b>Order Summary:</b>\n"
+        f"<b>{qty}x</b> {esc(product['name'])} = <b>{fmt_price(total)}</b>\n"
+        f"────────────────────"
     )
 
     if sold_out:
@@ -324,26 +332,26 @@ def product_page(product, qty):
             ],
         ]
     else:
-            buy_btn = InlineKeyboardButton(
-                f"Order Now • {fmt_price(total)}",
-                callback_data=f"buy:{product['id']}",
-                api_kwargs={"icon_custom_emoji_id": "5222184635659747645", "style": "success"}
-            )
-            rows = [
-                [
-                    InlineKeyboardButton("➖", callback_data=f"qtydec:{product['id']}"),
-                    InlineKeyboardButton(f"Qty: {qty}", callback_data="noop"),
-                    InlineKeyboardButton("➕", callback_data=f"qtyinc:{product['id']}"),
-                ],
-                [
-                    InlineKeyboardButton("✏️ Custom Quantity", callback_data=f"customqty:{product['id']}"),
-                ],
-                [buy_btn],
-                [
-                    InlineKeyboardButton("« Catalog", callback_data="catalog"),
-                    InlineKeyboardButton("« Menu", callback_data="home"),
-                ],
-            ]
+        buy_btn = InlineKeyboardButton(
+            f"Order Now • {fmt_price(total)}",
+            callback_data=f"buy:{product['id']}",
+            api_kwargs={"icon_custom_emoji_id": "5222184635659747645", "style": "success"}
+        )
+        rows = [
+            [
+                InlineKeyboardButton("➖", callback_data=f"qtydec:{product['id']}"),
+                InlineKeyboardButton(f"Qty: {qty}", callback_data="noop"),
+                InlineKeyboardButton("➕", callback_data=f"qtyinc:{product['id']}"),
+            ],
+            [
+                InlineKeyboardButton("✏️ Custom Quantity", callback_data=f"customqty:{product['id']}"),
+            ],
+            [buy_btn],
+            [
+                InlineKeyboardButton("« Catalog", callback_data="catalog"),
+                InlineKeyboardButton("« Menu", callback_data="home"),
+            ],
+        ]
     return text, InlineKeyboardMarkup(rows)
 
 
