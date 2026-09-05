@@ -148,7 +148,12 @@ def verify_binance_pay_transaction(user_input_id, expected_amount, tolerance_min
         resp = requests.get(url, headers=headers, timeout=15)
         if not resp.ok:
             logger.error("Binance Pay API error %s: %s", resp.status_code, resp.text)
-            return {"ok": False, "reason": f"API_ERROR_{resp.status_code}"}
+            try:
+                err_data = resp.json()
+                msg = err_data.get("errorMessage") or err_data.get("msg") or resp.text
+            except Exception:
+                msg = resp.text
+            return {"ok": False, "reason": f"API_{resp.status_code}: {msg}"}
         
         data = resp.json()
         tx_list = data.get("data") or []
