@@ -22,6 +22,7 @@ EMOJI_HEART = '<tg-emoji emoji-id="5273813153329719141">❤️</tg-emoji>'
 
 # Dedicated Animated Product Logos
 EMOJI_GEMINI = '<tg-emoji emoji-id="5951817721468424817">🤖</tg-emoji>'
+EMOJI_CLAUDE = '<tg-emoji emoji-id="5899837428797020489">😒</tg-emoji>'
 EMOJI_HBO = '<tg-emoji emoji-id="5298588152485651370">📺</tg-emoji>'
 EMOJI_CAPCUT = '<tg-emoji emoji-id="5474521476197536994">🖤</tg-emoji>'
 EMOJI_NETFLIX = '<tg-emoji emoji-id="5355165443143252480">📺</tg-emoji>'
@@ -86,6 +87,8 @@ def calculate_item_price(product, qty):
 def get_product_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
+    if "claude" in name:
+        return EMOJI_CLAUDE
     if "gemini" in name or pid == "P0001":
         return EMOJI_GEMINI
     if "hbo" in name or "max" in name:
@@ -100,6 +103,8 @@ def get_product_icon(product):
 def get_product_emoji_id(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
+    if "claude" in name:
+        return "5899837428797020489"
     if "gemini" in name or pid == "P0001":
         return "5951817721468424817"
     if "hbo" in name or "max" in name:
@@ -114,6 +119,8 @@ def get_product_emoji_id(product):
 def get_product_btn_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
+    if "claude" in name:
+        return "🧠"
     if "gemini" in name or pid == "P0001":
         return "✨"
     if "hbo" in name or "max" in name:
