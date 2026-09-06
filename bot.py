@@ -460,8 +460,8 @@ async def safe_edit(chat_id, message_id, text, reply_markup=None):
         await _send_fallback(chat_id, text, reply_markup)
 
 
-async def render_home(chat_id, edit_message_id=None, user_name=None):
-    text, kb = ui.home_text(user_name)
+async def render_home(chat_id, edit_message_id=None, user_name=None, user_id=None):
+    text, kb = ui.home_text(user_name, user_id=user_id or chat_id)
     if edit_message_id:
         await safe_edit(chat_id, edit_message_id, text, kb)
     elif config.BANNER_URL:
@@ -534,7 +534,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await asyncio.to_thread(sync.sync_from_sheets, True)
     name = update.effective_user.first_name or update.effective_user.username
-    await render_home(update.effective_chat.id, user_name=name)
+    await render_home(update.effective_chat.id, user_name=name, user_id=user_id)
 
 
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -546,7 +546,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await asyncio.to_thread(sync.sync_from_sheets)
     name = update.effective_user.first_name or update.effective_user.username
-    await render_home(update.effective_chat.id, user_name=name)
+    await render_home(update.effective_chat.id, user_name=name, user_id=user_id)
 
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -643,31 +643,49 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
         name = query.from_user.first_name or query.from_user.username
         await render_home(chat_id, msg_id, user_name=name)
 
-    elif data == "home":
-        is_member = await check_member(app.bot, query.from_user.id)
-        if not is_member:
-            await query.answer()
-            text, kb = ui.force_join_page()
-            await safe_edit(
-                chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
-            )
-            return
-        await asyncio.to_thread(sync.sync_from_sheets)
+    elif data in ("home", "refresh"):
+        await asyncio.to_thread(sync.sync_from_sheets, data == "refresh")
         name = query.from_user.first_name or query.from_user.username
-        await render_home(chat_id, msg_id, user_name=name)
+        await render_home(chat_id, msg_id, user_name=name, user_id=query.from_user.id)
 
-    elif data == "refresh":
-        is_member = await check_member(app.bot, query.from_user.id)
-        if not is_member:
-            await query.answer()
-            text, kb = ui.force_join_page()
-            await safe_edit(
-                chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
-            )
-            return
-        await asyncio.to_thread(sync.sync_from_sheets, True)
-        name = query.from_user.first_name or query.from_user.username
-        await render_home(chat_id, msg_id, user_name=name)
+    elif data == "topup":
+        bal = db.get_wallet(str(query.from_user.id))
+        t_text, t_kb = ui.topup_menu(bal)
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=t_text, reply_markup=t_kb)
+
+    elif data.startswith("dep:"):
+        amt = float(data.split(":")[1])
+        await start_deposit_flow(query, context, chat_id, msg_id, amt)
+
+    elif data == "custom_dep":
+        context.user_data["awaiting_deposit_amount"] = True
+        text = (
+            "✏️ <b>Enter Custom Top-Up Amount</b>\n"
+            "────────────────────\n\n"
+            "Please type the amount in USD you want to deposit (e.g., <code>15</code> or <code>30</code>):"
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("« Cancel", callback_data="topup")]
+        ])
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+
+    elif data.startswith("confirm_dep:"):
+        dep_id = data.split(":", 1)[1]
+        context.user_data["awaiting_dep_tx_for"] = dep_id
+        text = (
+            f"📲 <b>Enter Transfer Transaction ID</b>\n"
+            f"────────────────────\n\n"
+            f"Deposit: <code>{dep_id}</code>\n"
+            f"Please paste the <b>Transaction ID</b> or <b>Pay ID</b> from your transfer receipt below 👇"
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("« Cancel", callback_data="topup")]
+        ])
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+
+    elif data.startswith("pay_balance:"):
+        order_id = data.split(":", 1)[1]
+        await process_balance_payment(query, context, chat_id, msg_id, order_id)
 
     elif data == "promo":
         await asyncio.to_thread(sync.sync_from_sheets)
@@ -785,6 +803,14 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
         order_id = data.split(":", 1)[1]
         await admin_reject(query, context, chat_id, msg_id, order_id)
 
+    elif data.startswith("app_dep:"):
+        dep_id = data.split(":", 1)[1]
+        await admin_approve_deposit(query, context, chat_id, msg_id, dep_id)
+
+    elif data.startswith("rej_dep:"):
+        dep_id = data.split(":", 1)[1]
+        await admin_reject_deposit(query, context, chat_id, msg_id, dep_id)
+
     elif data.startswith("pay_binance:"):
         order_id = data.split(":", 1)[1]
         await process_binance_payment(query, context, chat_id, msg_id, order_id)
@@ -882,7 +908,8 @@ async def do_checkout(query, context, chat_id, msg_id):
 
     try:
         usdt_amount = total
-        text, kb = ui.payment_method_page(order, usdt_amount)
+        user_bal = db.get_wallet(str(user.id))
+        text, kb = ui.payment_method_page(order, usdt_amount, user_balance=user_bal)
         await safe_edit(
             chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
         )
@@ -915,6 +942,43 @@ async def do_checkout(query, context, chat_id, msg_id):
             f"👤 User: {user.id}\n"
             f"Error: {e}"
         )
+
+
+async def start_deposit_flow(query, context, chat_id, msg_id, amount):
+    dep_id = "DEP-" + uuid.uuid4().hex[:8].upper()
+    user = query.from_user
+    db.create_deposit(dep_id, user.id, user.username or "", amount, "crypto")
+    dep = db.get_deposit(dep_id)
+    text, kb = ui.deposit_pay_page(dep)
+    await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+
+
+async def process_balance_payment(query, context, chat_id, msg_id, order_id):
+    order = db.get_order(order_id)
+    if not order or str(order["telegram_id"]) != str(query.from_user.id):
+        await query.answer("Order not found.")
+        return
+    if order["status"] != "PENDING":
+        await query.answer("Order has already been processed.")
+        return
+
+    # Potong saldo user
+    total = float(order["total"])
+    if not db.deduct_user_balance(str(query.from_user.id), total):
+        await query.answer("Insufficient balance! Please top up.", show_alert=True)
+        return
+
+    await query.answer("Payment successful! Delivering product... ⚡")
+    status = await complete_order(order_id, f"BAL-{order_id}", context)
+    if status == "COMPLETED":
+        text, kb = ui.success_page(order_id)
+    else:
+        # Kembalikan saldo jika kebetulan stok habis
+        db.add_user_balance(str(query.from_user.id), total)
+        text, kb = ui.no_stock_paid_page(order_id)
+
+    if query.message:
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
 
 
 async def process_binance_payment(query, context, chat_id, msg_id, order_id):
@@ -1325,6 +1389,98 @@ async def notify_admin_pending_verification(order_id, tx_id=None):
         logger.error("Notif verifikasi admin gagal: %s", e)
 
 
+async def notify_admin_pending_deposit(deposit_id, tx_id=None):
+    if config.ADMIN_CHAT_ID is None:
+        return
+    dep = db.get_deposit(deposit_id)
+    if not dep:
+        return
+    kb = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("✅ Approve Deposit", callback_data=f"app_dep:{deposit_id}"),
+                InlineKeyboardButton("❌ Reject", callback_data=f"rej_dep:{deposit_id}"),
+            ]
+        ]
+    )
+    tx_str = f"🧾 <b>TxID/PayID:</b> <code>{ui.esc(tx_id)}</code>\n" if tx_id else ""
+    text = (
+        f"💳 <b>DEPOSIT AWAITING VERIFICATION</b>\n\n"
+        f"🆔 Deposit ID: <code>{deposit_id}</code>\n"
+        f"💰 Amount: <b>{ui.fmt_price(dep['amount'])}</b>\n"
+        f"{tx_str}"
+        f"👤 User: {dep['telegram_id']} (@{dep.get('username') or '-'})\n\n"
+        f"Check incoming funds in wallet/Binance, then Approve or Reject."
+    )
+    try:
+        await app.bot.send_message(
+            chat_id=config.ADMIN_CHAT_ID,
+            text=text,
+            parse_mode="HTML",
+            reply_markup=kb,
+        )
+    except Exception as e:
+        logger.error("Notif deposit admin gagal: %s", e)
+
+
+async def admin_approve_deposit(query, context, chat_id, msg_id, deposit_id):
+    if config.ADMIN_CHAT_ID is None or str(query.from_user.id) != str(config.ADMIN_CHAT_ID):
+        await query.answer("Admin only.")
+        return
+    dep = db.get_deposit(deposit_id)
+    if not dep or dep["status"] != "PENDING":
+        await query.answer("Deposit already processed or not found.")
+        return
+    
+    if db.confirm_deposit_success(deposit_id, dep.get("tx_id") or ""):
+        await query.answer("Deposit approved! Balance added.")
+        new_bal = db.get_wallet(str(dep["telegram_id"]))
+        try:
+            await app.bot.send_message(
+                chat_id=int(dep["telegram_id"]),
+                text=(
+                    f"🎉 <b>Deposit Successful!</b>\n\n"
+                    f"Your deposit of <b>{ui.fmt_price(dep['amount'])}</b> has been verified.\n"
+                    f"💳 <b>Updated Balance:</b> <b>{ui.fmt_price(new_bal)}</b>\n\n"
+                    f"You can now use <b>1-Click Pay with Balance</b> on your orders!"
+                ),
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            logger.error("Notif deposit user gagal: %s", e)
+        try:
+            await safe_edit(chat_id=chat_id, message_id=msg_id, text=f"✅ Deposit <code>{deposit_id}</code> approved (+{ui.fmt_price(dep['amount'])}).", reply_markup=InlineKeyboardMarkup([]))
+        except Exception:
+            pass
+
+
+async def admin_reject_deposit(query, context, chat_id, msg_id, deposit_id):
+    if config.ADMIN_CHAT_ID is None or str(query.from_user.id) != str(config.ADMIN_CHAT_ID):
+        await query.answer("Admin only.")
+        return
+    dep = db.get_deposit(deposit_id)
+    if not dep or dep["status"] != "PENDING":
+        await query.answer("Deposit already processed.")
+        return
+    conn = db.get_conn()
+    conn.execute("UPDATE deposits SET status='FAILED' WHERE deposit_id=?", (deposit_id,))
+    conn.commit()
+    conn.close()
+    await query.answer("Deposit rejected.")
+    try:
+        await app.bot.send_message(
+            chat_id=int(dep["telegram_id"]),
+            text="❌ Your deposit transfer could not be verified. If you already sent funds, please contact support.",
+            parse_mode="HTML"
+        )
+    except Exception:
+        pass
+    try:
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=f"❌ Deposit <code>{deposit_id}</code> rejected.", reply_markup=InlineKeyboardMarkup([]))
+    except Exception:
+        pass
+
+
 async def admin_approve(query, context, chat_id, msg_id, order_id):
     if config.ADMIN_CHAT_ID is None or str(query.from_user.id) != str(config.ADMIN_CHAT_ID):
         await query.answer("Admin only.")
@@ -1715,7 +1871,48 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-    # 0.5. User mengirimkan Transaction ID / Pay ID untuk verifikasi admin
+    # 0.3. User mengetik nominal custom deposit
+    if context.user_data.get("awaiting_deposit_amount"):
+        context.user_data.pop("awaiting_deposit_amount", None)
+        try:
+            val = float(text.replace("$", "").replace(",", "").strip())
+            if val < 1.0:
+                await update.message.reply_text("Minimum deposit amount is $1.00. Please try again.")
+                return
+            dep_id = "DEP-" + uuid.uuid4().hex[:8].upper()
+            db.create_deposit(dep_id, update.effective_user.id, update.effective_user.username or "", val, "crypto")
+            dep = db.get_deposit(dep_id)
+            d_text, d_kb = ui.deposit_pay_page(dep)
+            await update.message.reply_text(d_text, parse_mode="HTML", reply_markup=d_kb)
+            return
+        except ValueError:
+            await update.message.reply_text("Invalid amount format. Please enter a valid number (e.g. 10 or 25).")
+            return
+
+    # 0.4. User mengirimkan Transaction ID / Pay ID untuk Top-Up
+    awaiting_dep_id = context.user_data.get("awaiting_dep_tx_for")
+    if awaiting_dep_id and len(text) >= 4:
+        target_dep = awaiting_dep_id
+        context.user_data.pop("awaiting_dep_tx_for", None)
+        dep = db.get_deposit(target_dep)
+        if not dep:
+            await update.message.reply_text("Deposit request expired. Please initiate a new top-up.")
+            return
+
+        tx_val = text.strip()
+        conn = db.get_conn()
+        conn.execute("UPDATE deposits SET tx_id=? WHERE deposit_id=?", (tx_val, target_dep))
+        conn.commit()
+        conn.close()
+
+        await update.message.reply_text(
+            "⏳ <b>Deposit Submitted for Verification</b>\n────────────────────\n"
+            f"ID: <code>{target_dep}</code>\nAmount: <b>{ui.fmt_price(dep['amount'])}</b>\n\n"
+            "Admin is verifying your transfer. Your balance will update instantly upon approval! 🙏",
+            parse_mode="HTML"
+        )
+        await notify_admin_pending_deposit(target_dep, tx_id=tx_val)
+        return
     awaiting_tx_oid = context.user_data.get("awaiting_binance_tx_for")
     if awaiting_tx_oid and len(text) >= 4:
         target_oid = awaiting_tx_oid

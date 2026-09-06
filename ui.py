@@ -179,13 +179,15 @@ def product_line(p):
     return f"{icon} <b>{esc(p['name'])}</b>\n   └ {price_display} • {stock_badge}"
 
 
-def home_text(user_name=None):
+def home_text(user_name=None, user_id=None):
     products = db.get_active_products()
     name_str = f", <b>{esc(user_name)}</b>" if user_name else ""
+    balance_val = db.get_wallet(str(user_id)) if user_id else 0.0
 
     text = (
         f"{EMOJI_STORE} <b>{BRAND} OFFICIAL STORE</b>{name_str} {EMOJI_VERIFIED}\n"
         f"────────────────────\n"
+        f"💳 <b>Your Balance:</b> <b>{fmt_price(balance_val)}</b>\n"
         f"{EMOJI_CLOCK} <i>Instant Automated 24/7 Delivery</i>\n"
         f"{EMOJI_MONEY} <i>Direct Wholesale Digital Subscriptions</i>\n\n"
         f"<b>{EMOJI_CART} Select a product below to purchase:</b>"
@@ -212,14 +214,15 @@ def home_text(user_name=None):
 
     # Navigasi Menu
     rows.append([
+        InlineKeyboardButton("💳 Top Up Balance", callback_data="topup"),
         InlineKeyboardButton("📦 Live Vault", callback_data="stock"),
+    ])
+    rows.append([
         InlineKeyboardButton("🧾 Orders Log", callback_data="orders"),
-    ])
-    rows.append([
         InlineKeyboardButton("🤝 Affiliate (5%)", callback_data="affiliate"),
-        InlineKeyboardButton("💬 Support Desk", callback_data="contact"),
     ])
     rows.append([
+        InlineKeyboardButton("💬 Support Desk", callback_data="contact"),
         InlineKeyboardButton("🔄 Refresh Store", callback_data="refresh"),
     ])
 
@@ -484,26 +487,96 @@ def loading_text(msg="Processing your order..."):
     return f"⏳ <b>{esc(msg)}</b>\n\n<i>Please wait a moment...</i>", InlineKeyboardMarkup([])
 
 
-def payment_method_page(order, usdt_amount=None):
+def payment_method_page(order, usdt_amount=None, user_balance=0.0):
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
     icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
+    bal_str = fmt_price(user_balance)
     text = (
         f"{EMOJI_VERIFIED} <b>SECURE CHECKOUT</b>\n"
         f"────────────────────\n\n"
         f"{icon} <b>Item     :</b> {esc(order['product_name'])}\n"
         f"🔢 <b>Quantity :</b> {order['qty']}x\n"
         f"💰 <b>Total Due:</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
+        f"💳 <b>Wallet   :</b> <b>{bal_str}</b>\n"
         f"🧾 <b>Order ID :</b> <code>{order['order_id']}</code>\n\n"
         f"────────────────────\n"
-        f"Select your preferred crypto payment channel below:"
+        f"Select your preferred payment channel below:"
     )
+    buttons = []
+    # Jika saldo mencukupi, tampilkan tombol bayar instan pakai saldo!
+    if float(user_balance) >= float(order['total']):
+        pay_bal_btn = InlineKeyboardButton(f"⚡ Pay with Balance ({bal_str})", callback_data=f"pay_balance:{order['order_id']}")
+        try:
+            setattr(pay_bal_btn, "style", "success")
+            setattr(pay_bal_btn, "icon_custom_emoji_id", "5417924076503062111")
+        except Exception:
+            pass
+        buttons.append([pay_bal_btn])
+
     b1 = InlineKeyboardButton("Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}", api_kwargs={"style": "success"})
     b2 = InlineKeyboardButton("USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}", api_kwargs={"style": "success"})
-    buttons = [
-        [b1, b2],
-        [InlineKeyboardButton("« Cancel & Return", callback_data="home")],
-    ]
+    buttons.append([b1, b2])
+    buttons.append([InlineKeyboardButton("« Cancel & Return", callback_data="home")])
     return text, InlineKeyboardMarkup(buttons)
+
+
+def topup_menu(user_balance=0.0):
+    bal_str = fmt_price(user_balance)
+    text = (
+        f"💳 <b>TOP UP WALLET BALANCE</b>\n"
+        f"────────────────────\n\n"
+        f"💰 <b>Current Balance:</b> <b>{bal_str}</b>\n\n"
+        f"Top up your wallet to enjoy <b>1-Click Instant Purchases</b> without needing to transfer on every order.\n\n"
+        f"────────────────────\n"
+        f"<i>Select a top-up amount below or enter a custom amount:</i>"
+    )
+    rows = [
+        [
+            InlineKeyboardButton("+$5.00", callback_data="dep:5"),
+            InlineKeyboardButton("+$10.00", callback_data="dep:10"),
+            InlineKeyboardButton("+$25.00", callback_data="dep:25"),
+        ],
+        [
+            InlineKeyboardButton("+$50.00", callback_data="dep:50"),
+            InlineKeyboardButton("+$100.00", callback_data="dep:100"),
+        ],
+        [
+            InlineKeyboardButton("✏️ Enter Custom Amount", callback_data="custom_dep"),
+        ],
+        [
+            InlineKeyboardButton("« Return to Menu", callback_data="home"),
+        ]
+    ]
+    return text, InlineKeyboardMarkup(rows)
+
+
+def deposit_pay_page(deposit):
+    amt = float(deposit['amount'])
+    pay_id = config.BINANCE_PAY_ID
+    wallet = config.CRYPTO_WALLET_USDT
+    text = (
+        f"💳 <b>DEPOSIT SETTLEMENT • {fmt_price(amt)}</b>\n"
+        f"────────────────────\n\n"
+        f"🆔 <b>Deposit ID:</b> <code>{deposit['deposit_id']}</code>\n"
+        f"💰 <b>Amount Due:</b> <b>{amt:.2f} USDT</b> (Send exact)\n\n"
+        f"<b>1. Via Binance Pay:</b>\n"
+        f"👉 Pay ID: <code>{pay_id}</code>\n\n"
+        f"<b>2. Via USDT (BEP20 / BSC):</b>\n"
+        f"👉 Address: <code>{wallet}</code>\n\n"
+        f"────────────────────\n"
+        f"<i>Tap below after transferring to paste your Transaction ID:</i>"
+    )
+    btn = InlineKeyboardButton("I Have Transferred", callback_data=f"confirm_dep:{deposit['deposit_id']}")
+    try:
+        setattr(btn, "style", "success")
+        setattr(btn, "icon_custom_emoji_id", "5411309092427834175")
+    except Exception:
+        pass
+    rows = [
+        [btn],
+        [InlineKeyboardButton("« Cancel Deposit", callback_data="home")]
+    ]
+    return text, InlineKeyboardMarkup(rows)
 
 
 def binance_pay_page(order, usdt_amount=None):
