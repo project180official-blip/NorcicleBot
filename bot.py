@@ -1131,6 +1131,20 @@ async def send_product_file(context, order, contents):
             "2. If email verification/OTP needed, check: https://mailku.online/mailbox\n"
             "3. Enjoy GPT Plus features and premium tools.\n"
         )
+    if "notion" in order["product_name"].lower():
+        file_text += (
+            "📝 NOTION AI BUSINESS ACCESS GUIDE:\n"
+            "1. Check invitation link or login credentials provided above.\n"
+            "2. If an invite link is provided, accept it using your personal Notion workspace.\n"
+            "3. Full 12 Months access to Notion AI Business features enabled.\n"
+        )
+    if "figma" in order["product_name"].lower():
+        file_text += (
+            "🎨 FIGMA PRO EDU ACCESS GUIDE:\n"
+            "1. Log in with the account credentials provided above.\n"
+            "2. Access unlimited projects, files, and Pro features.\n"
+            "3. Full warranty active as specified in product terms.\n"
+        )
     file_text += "Thank you for purchasing!\n"
     buf = io.BytesIO(file_text.encode("utf-8"))
     buf.name = f"product-{order['order_id']}.txt"

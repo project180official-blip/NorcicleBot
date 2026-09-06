@@ -28,6 +28,9 @@ EMOJI_CAPCUT = '<tg-emoji emoji-id="5474521476197536994">🖤</tg-emoji>'
 EMOJI_NETFLIX = '<tg-emoji emoji-id="5355165443143252480">📺</tg-emoji>'
 EMOJI_CHATGPT = '<tg-emoji emoji-id="5796185041717433060">😺</tg-emoji>'
 EMOJI_GROK = '<tg-emoji emoji-id="5902340522852227618">😐</tg-emoji>'
+EMOJI_NOTION = '<tg-emoji emoji-id="5938274774756103272">📝</tg-emoji>'
+EMOJI_FIGMA = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
+EMOJI_LEONARDO = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
 EMOJI_DEFAULT_PROD = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
 
 
@@ -89,6 +92,12 @@ def calculate_item_price(product, qty):
 def get_product_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
+    if "notion" in name or pid == "P0010":
+        return EMOJI_NOTION
+    if "figma" in name or pid == "P0011":
+        return EMOJI_FIGMA
+    if "leonardo" in name or pid == "P0012":
+        return EMOJI_LEONARDO
     if "claude" in name or pid == "P0006":
         return EMOJI_CLAUDE
     if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
@@ -109,6 +118,12 @@ def get_product_icon(product):
 def get_product_emoji_id(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
+    if "notion" in name or pid == "P0010":
+        return "5938274774756103272"
+    if "figma" in name or pid == "P0011":
+        return "5472246178617765188"
+    if "leonardo" in name or pid == "P0012":
+        return "5472246178617765188"
     if "claude" in name or pid == "P0006":
         return "5899837428797020489"
     if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
@@ -129,6 +144,12 @@ def get_product_emoji_id(product):
 def get_product_btn_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
+    if "notion" in name or pid == "P0010":
+        return "📝"
+    if "figma" in name or pid == "P0011":
+        return "🎨"
+    if "leonardo" in name or pid == "P0012":
+        return "🖌️"
     if "claude" in name or pid == "P0006":
         return "🧠"
     if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
