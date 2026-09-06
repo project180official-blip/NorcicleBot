@@ -28,9 +28,9 @@ EMOJI_CAPCUT = '<tg-emoji emoji-id="5474521476197536994">🖤</tg-emoji>'
 EMOJI_NETFLIX = '<tg-emoji emoji-id="5355165443143252480">📺</tg-emoji>'
 EMOJI_CHATGPT = '<tg-emoji emoji-id="5796185041717433060">😺</tg-emoji>'
 EMOJI_GROK = '<tg-emoji emoji-id="5902340522852227618">😐</tg-emoji>'
-EMOJI_NOTION = '<tg-emoji emoji-id="5938274774756103272">📝</tg-emoji>'
-EMOJI_FIGMA = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
-EMOJI_LEONARDO = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
+EMOJI_NOTION = '<tg-emoji emoji-id="5364199932620194408">📱</tg-emoji>'
+EMOJI_FIGMA = '<tg-emoji emoji-id="5411160533804014808">🟣</tg-emoji>'
+EMOJI_LEONARDO = '<tg-emoji emoji-id="5332348708556133142">👍</tg-emoji>'
 EMOJI_DEFAULT_PROD = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
 
 
@@ -119,11 +119,11 @@ def get_product_emoji_id(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
     if "notion" in name or pid == "P0010":
-        return "5938274774756103272"
+        return "5364199932620194408"
     if "figma" in name or pid == "P0011":
-        return "5472246178617765188"
+        return "5411160533804014808"
     if "leonardo" in name or pid == "P0012":
-        return "5472246178617765188"
+        return "5332348708556133142"
     if "claude" in name or pid == "P0006":
         return "5899837428797020489"
     if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
