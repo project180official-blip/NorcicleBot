@@ -705,13 +705,12 @@ def pending_page(order):
 
 def awaiting_admin_page(order_id):
     text = (
-        f"🕐 <b>VERIFICATION IN PROGRESS</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"⚡ <b>PAYMENT VERIFICATION IN PROGRESS</b>\n"
+        f"────────────────────\n\n"
         f"🧾 <b>Order ID:</b> <code>{esc(order_id)}</code>\n\n"
-        f"Your transfer confirmation has been submitted.\n"
-        f"Admin is verifying the transaction ledger.\n\n"
-        f"⚡ <i>Your credentials will be delivered automatically upon confirmation!</i>\n"
-        f"━━━━━━━━━━━━━━━━━━━━"
+        f"Your transaction details have been received and are being matched with the payment network.\n\n"
+        f"🚀 <i>Once verified against the ledger, your digital credentials will be dispatched automatically here!</i>\n"
+        f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [[InlineKeyboardButton("« Return to Menu", callback_data="home")]]

@@ -925,7 +925,7 @@ async def do_checkout(query, context, chat_id, msg_id):
         db.release_reservation(order_id)
         db.set_order_status(order_id, "FAILED")
         await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
-        text, kb = ui.error_page("Payment creation failed. Admin will contact you.")
+        text, kb = ui.error_page("Payment creation failed. Please try again or contact support.")
         try:
             await safe_edit(
                 chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
@@ -1334,10 +1334,10 @@ async def confirm_payment(query, context, order_id):
     # Minta user mengirimkan Transaction ID / Bukti transfer
     context.user_data["awaiting_binance_tx_for"] = order_id
     text = (
-        f"📲 <b>Enter Transfer / Transaction ID</b>\n"
+        f"📲 <b>Enter Payment Transaction ID</b>\n"
         f"────────────────────\n\n"
-        f"Please paste your <b>Transaction ID</b> or <b>Pay ID</b> from your payment receipt in the chat below 👇\n\n"
-        f"💡 <i>Admin will verify and dispatch your product promptly!</i>"
+        f"Please paste the <b>Transaction ID</b> or <b>Pay ID</b> from your transfer receipt below 👇\n\n"
+        f"⚡ <i>Once verified, your digital product will be dispatched automatically!</i>"
     )
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("« Cancel", callback_data="home")]
@@ -1906,9 +1906,9 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn.close()
 
         await update.message.reply_text(
-            "⏳ <b>Deposit Submitted for Verification</b>\n────────────────────\n"
+            "⚡ <b>Deposit Verification in Progress</b>\n────────────────────\n"
             f"ID: <code>{target_dep}</code>\nAmount: <b>{ui.fmt_price(dep['amount'])}</b>\n\n"
-            "Admin is verifying your transfer. Your balance will update instantly upon approval! 🙏",
+            "Matching your transaction with the payment network. Your balance will update automatically upon verification! 🚀",
             parse_mode="HTML"
         )
         await notify_admin_pending_deposit(target_dep, tx_id=tx_val)
