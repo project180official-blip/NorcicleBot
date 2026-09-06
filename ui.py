@@ -74,6 +74,7 @@ def calculate_item_price(product, qty):
     base_price = float(product.get("price", 0))
 
     # Tiered pricing khusus Gemini AI:
+    # 1 pcs: $0.90
     # 2 - 4 pcs: $0.80
     # 5 - 9 pcs: $0.70
     # >= 10 pcs: $0.50
@@ -82,8 +83,10 @@ def calculate_item_price(product, qty):
             unit_price = 0.5
         elif qty >= 5:
             unit_price = 0.7
-        else:
+        elif qty >= 2:
             unit_price = 0.8
+        else:
+            unit_price = 0.9
         return unit_price, round(unit_price * qty, 2)
 
     return base_price, round(base_price * qty, 2)
@@ -173,7 +176,7 @@ def product_line(p):
     pname = str(p.get("name", "")).lower()
     icon = get_product_icon(p)
     if p.get("id") == "P0001" or "gemini" in pname:
-        price_display = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
+        price_display = "$0.90 ($0.80 for 2+ | $0.50 for 10+)"
     else:
         price_display = fmt_price(p['price'])
     return f"{icon} <b>{esc(p['name'])}</b>\n   └ {price_display} • {stock_badge}"
@@ -337,10 +340,10 @@ def product_page(product, qty):
     if product.get("id") == "P0001" or "gemini" in pname:
         tier_block = (
             f"\n💎 <b>Wholesale Tiers:</b>\n"
+            f"• 1 pcs     : <b>$0.90</b>\n"
             f"• 2 – 4 pcs : <b>$0.80</b> / ea\n"
             f"• 5 – 9 pcs : <b>$0.70</b> / ea\n"
             f"• 10+ pcs   : <b>$0.50</b> / ea\n"
-            f"<i>(Minimum order: 2 pcs)</i>\n"
         )
 
     desc = esc(product['description']).strip()
