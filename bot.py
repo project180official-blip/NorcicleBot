@@ -117,7 +117,71 @@ def nevapedia_is_paid(status):
     return status in ("paid", "success", "completed", "settled")
 
 
-def fetch_usdt_idr_rate():
+import hmac
+import hashlib
+import urllib.parse
+
+
+def verify_binance_pay_transaction(user_input_id, expected_amount, tolerance_minutes=180):
+    """Cek transaksi masuk di Binance Pay via API key berdasarkan Transaction ID atau Order ID dari user."""
+    if not config.BINANCE_API_KEY or not config.BINANCE_API_SECRET:
+        return {"ok": False, "reason": "NO_API_KEYS"}
+    
+    timestamp = int(time.time() * 1000)
+    start_time = timestamp - (tolerance_minutes * 60 * 1000)
+    params = {
+        "timestamp": timestamp,
+        "startTime": start_time,
+        "limit": 50
+    }
+    query_str = urllib.parse.urlencode(params)
+    signature = hmac.new(
+        config.BINANCE_API_SECRET.encode("utf-8"),
+        query_str.encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+    
+    url = f"https://api.binance.com/sapi/v1/pay/transactions?{query_str}&signature={signature}"
+    headers = {"X-MBX-APIKEY": config.BINANCE_API_KEY}
+    
+    try:
+        resp = requests.get(url, headers=headers, timeout=15)
+        if not resp.ok:
+            logger.error("Binance Pay API error %s: %s", resp.status_code, resp.text)
+            try:
+                err_data = resp.json()
+                msg = err_data.get("errorMessage") or err_data.get("msg") or resp.text
+            except Exception:
+                msg = resp.text
+            return {"ok": False, "reason": f"API_{resp.status_code}: {msg}"}
+        
+        data = resp.json()
+        tx_list = data.get("data") or []
+        
+        target_clean = str(user_input_id).strip().upper()
+        for tx in tx_list:
+            tx_id = str(tx.get("transactionId") or "").upper()
+            binance_order_id = str(tx.get("orderId") or "").upper()
+            note = str(tx.get("note") or "").upper()
+            amount = float(tx.get("amount") or 0)
+            currency = str(tx.get("currency") or "").upper()
+            
+            # Cek kecocokan: apakah input user cocok dengan Transaction ID, Order ID, atau Note
+            matched_id = (target_clean == tx_id) or (target_clean == binance_order_id) or (target_clean in note) or (tx_id in target_clean)
+            matched_amount = amount >= float(expected_amount) and currency in ("USDT", "BUSD", "USDC")
+            
+            if matched_id and matched_amount:
+                return {
+                    "ok": True,
+                    "txId": tx.get("transactionId") or tx.get("orderId"),
+                    "amount": amount,
+                    "currency": currency
+                }
+        
+        return {"ok": False, "reason": "TRANSACTION_NOT_FOUND"}
+    except Exception as e:
+        logger.error("Error verifying Binance Pay: %s", e)
+        return {"ok": False, "reason": str(e)}
     try:
         resp = requests.get(
             "https://api.coingecko.com/api/v3/simple/price",
@@ -396,8 +460,8 @@ async def safe_edit(chat_id, message_id, text, reply_markup=None):
         await _send_fallback(chat_id, text, reply_markup)
 
 
-async def render_home(chat_id, edit_message_id=None, user_name=None):
-    text, kb = ui.home_text(user_name)
+async def render_home(chat_id, edit_message_id=None, user_name=None, user_id=None):
+    text, kb = ui.home_text(user_name, user_id=user_id or chat_id)
     if edit_message_id:
         await safe_edit(chat_id, edit_message_id, text, kb)
     elif config.BANNER_URL:
@@ -450,14 +514,8 @@ async def render_product(chat_id, edit_message_id, product_id, qty):
 
 
 async def check_member(bot, user_id):
-    if not config.CHANNEL_USERNAME:
-        return True
-    try:
-        member = await bot.get_chat_member(chat_id=config.CHANNEL_USERNAME, user_id=user_id)
-        return member.status in ("member", "administrator", "creator")
-    except Exception as e:
-        logger.warning("check_member gagal (fail-open): %s", e)
-        return True
+    # Nonaktifkan kewajiban join channel: user bisa langsung berbelanja tanpa dipaksa subscribe
+    return True
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -476,7 +534,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await asyncio.to_thread(sync.sync_from_sheets, True)
     name = update.effective_user.first_name or update.effective_user.username
-    await render_home(update.effective_chat.id, user_name=name)
+    await render_home(update.effective_chat.id, user_name=name, user_id=user_id)
 
 
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -488,7 +546,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await asyncio.to_thread(sync.sync_from_sheets)
     name = update.effective_user.first_name or update.effective_user.username
-    await render_home(update.effective_chat.id, user_name=name)
+    await render_home(update.effective_chat.id, user_name=name, user_id=user_id)
 
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -585,31 +643,49 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
         name = query.from_user.first_name or query.from_user.username
         await render_home(chat_id, msg_id, user_name=name)
 
-    elif data == "home":
-        is_member = await check_member(app.bot, query.from_user.id)
-        if not is_member:
-            await query.answer()
-            text, kb = ui.force_join_page()
-            await safe_edit(
-                chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
-            )
-            return
-        await asyncio.to_thread(sync.sync_from_sheets)
+    elif data in ("home", "refresh"):
+        await asyncio.to_thread(sync.sync_from_sheets, data == "refresh")
         name = query.from_user.first_name or query.from_user.username
-        await render_home(chat_id, msg_id, user_name=name)
+        await render_home(chat_id, msg_id, user_name=name, user_id=query.from_user.id)
 
-    elif data == "refresh":
-        is_member = await check_member(app.bot, query.from_user.id)
-        if not is_member:
-            await query.answer()
-            text, kb = ui.force_join_page()
-            await safe_edit(
-                chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
-            )
-            return
-        await asyncio.to_thread(sync.sync_from_sheets, True)
-        name = query.from_user.first_name or query.from_user.username
-        await render_home(chat_id, msg_id, user_name=name)
+    elif data == "topup":
+        bal = db.get_wallet(str(query.from_user.id))
+        t_text, t_kb = ui.topup_menu(bal)
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=t_text, reply_markup=t_kb)
+
+    elif data.startswith("dep:"):
+        amt = float(data.split(":")[1])
+        await start_deposit_flow(query, context, chat_id, msg_id, amt)
+
+    elif data == "custom_dep":
+        context.user_data["awaiting_deposit_amount"] = True
+        text = (
+            "✏️ <b>Enter Custom Top-Up Amount</b>\n"
+            "────────────────────\n\n"
+            "Please type the amount in USD you want to deposit (e.g., <code>15</code> or <code>30</code>):"
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("« Cancel", callback_data="topup")]
+        ])
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+
+    elif data.startswith("confirm_dep:"):
+        dep_id = data.split(":", 1)[1]
+        context.user_data["awaiting_dep_tx_for"] = dep_id
+        text = (
+            f"📲 <b>Enter Transfer Transaction ID</b>\n"
+            f"────────────────────\n\n"
+            f"Deposit: <code>{dep_id}</code>\n"
+            f"Please paste the <b>Transaction ID</b> or <b>Pay ID</b> from your transfer receipt below 👇"
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("« Cancel", callback_data="topup")]
+        ])
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+
+    elif data.startswith("pay_balance:"):
+        order_id = data.split(":", 1)[1]
+        await process_balance_payment(query, context, chat_id, msg_id, order_id)
 
     elif data == "promo":
         await asyncio.to_thread(sync.sync_from_sheets)
@@ -723,6 +799,14 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
         order_id = data.split(":", 1)[1]
         await admin_reject(query, context, chat_id, msg_id, order_id)
 
+    elif data.startswith("app_dep:"):
+        dep_id = data.split(":", 1)[1]
+        await admin_approve_deposit(query, context, chat_id, msg_id, dep_id)
+
+    elif data.startswith("rej_dep:"):
+        dep_id = data.split(":", 1)[1]
+        await admin_reject_deposit(query, context, chat_id, msg_id, dep_id)
+
     elif data.startswith("pay_binance:"):
         order_id = data.split(":", 1)[1]
         await process_binance_payment(query, context, chat_id, msg_id, order_id)
@@ -749,6 +833,7 @@ async def do_checkout(query, context, chat_id, msg_id):
             chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
         )
         return
+    
     if db.count_available(product_id) < qty:
         text, kb = ui.soldout_page()
         await safe_edit(
@@ -812,7 +897,8 @@ async def do_checkout(query, context, chat_id, msg_id):
 
     try:
         usdt_amount = total
-        text, kb = ui.payment_method_page(order, usdt_amount)
+        user_bal = db.get_wallet(str(user.id))
+        text, kb = ui.payment_method_page(order, usdt_amount, user_balance=user_bal)
         await safe_edit(
             chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
         )
@@ -828,7 +914,7 @@ async def do_checkout(query, context, chat_id, msg_id):
         db.release_reservation(order_id)
         db.set_order_status(order_id, "FAILED")
         await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
-        text, kb = ui.error_page("Gagal membuat pembayaran. Admin akan menghubungi kamu.")
+        text, kb = ui.error_page("Payment creation failed. Please try again or contact support.")
         try:
             await safe_edit(
                 chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
@@ -838,13 +924,50 @@ async def do_checkout(query, context, chat_id, msg_id):
                 chat_id=chat_id, text=text, reply_markup=kb
             )
         await notify_admin(
-            f"⚠️ <b>GAGAL BUAT PAYMENT</b>\n"
+            f"⚠️ <b>PAYMENT CREATION FAILED</b>\n"
             f"🆔 Order: <code>{order_id}</code>\n"
             f"{ui.esc(product['name'])} x{qty}\n"
-            f"💰 Total: Rp{total}\n"
+            f"💰 Total: {ui.fmt_price(total)}\n"
             f"👤 User: {user.id}\n"
             f"Error: {e}"
         )
+
+
+async def start_deposit_flow(query, context, chat_id, msg_id, amount):
+    dep_id = "DEP-" + uuid.uuid4().hex[:8].upper()
+    user = query.from_user
+    db.create_deposit(dep_id, user.id, user.username or "", amount, "crypto")
+    dep = db.get_deposit(dep_id)
+    text, kb = ui.deposit_pay_page(dep)
+    await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+
+
+async def process_balance_payment(query, context, chat_id, msg_id, order_id):
+    order = db.get_order(order_id)
+    if not order or str(order["telegram_id"]) != str(query.from_user.id):
+        await query.answer("Order not found.")
+        return
+    if order["status"] != "PENDING":
+        await query.answer("Order has already been processed.")
+        return
+
+    # Potong saldo user
+    total = float(order["total"])
+    if not db.deduct_user_balance(str(query.from_user.id), total):
+        await query.answer("Insufficient balance! Please top up.", show_alert=True)
+        return
+
+    await query.answer("Payment successful! Delivering product... ⚡")
+    status = await complete_order(order_id, f"BAL-{order_id}", context)
+    if status == "COMPLETED":
+        text, kb = ui.success_page(order_id)
+    else:
+        # Kembalikan saldo jika kebetulan stok habis
+        db.add_user_balance(str(query.from_user.id), total)
+        text, kb = ui.no_stock_paid_page(order_id)
+
+    if query.message:
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
 
 
 async def process_binance_payment(query, context, chat_id, msg_id, order_id):
@@ -974,81 +1097,107 @@ async def paid_check(query, context, chat_id, msg_id):
 
 
 NETFLIX_VPN_TERMS = (
-    "🟥 NETFLIX TUTORIAL: WATCH USING VPN\n\n"
+    "🟥 NETFLIX TUTORIAL: STREAMING WITH VPN\n\n"
     "HOW TO USE:\n"
-    "1. Log in to your account as usual without connecting to a VPN.\n"
-    "2. Once logged in successfully, select the movie/show you want to watch.\n"
-    "3. Turn on your VPN before clicking the PLAY button. "
-    "You can use any region/server of your choice.\n"
-    "4. Once the video starts playing, you may turn off the VPN and continue streaming. "
-    "Leaving the VPN on is also fine.\n\n"
-    "If you cannot log in with the password, please log in using OTP.\n\n"
-    "📩 OTP ACCESS:\n"
+    "1. Log in to the account as usual without connecting to VPN.\n"
+    "2. Once logged in successfully, choose the movie/show you wish to watch.\n"
+    "3. Turn on your VPN before clicking PLAY. "
+    "Feel free to connect to any VPN server/region.\n"
+    "4. Once video starts playing, you may turn off the VPN and continue watching. "
+    "Leaving VPN on is also fine.\n\n"
+    "If you cannot log in with the password, please use OTP login.\n\n"
+    "📩 OTP INBOX ACCESS:\n"
     "https://mailku.online/mailbox\n\n"
     "⚠️ TERMS OF PURCHASE\n"
-    "> Please understand the usage instructions before purchasing.\n"
-    "> No refunds if the account is wiped, banned, or encounters issues after purchase.\n"
-    "> Ensure you agree to all terms before making a purchase.\n"
-    "> BUYING = AGREEING to all terms and conditions.\n\n"
-    "If you have questions regarding usage or login, feel free to contact support first.\n\n"
+    "> Please understand the instructions before making a purchase.\n"
+    "> No refunds if account is wiped, banned, or encounters issues post-purchase.\n"
+    "> Ensure you have read and agreed to all conditions before buying.\n"
+    "> PURCHASING = AGREEING to all terms & conditions.\n\n"
+    "If you have questions regarding usage or login, feel free to contact support.\n\n"
 )
 
 GENERAL_TERMS = (
-    "== TERMS & USAGE INSTRUCTIONS ==\n\n"
-    "> Keep this file safe and do not share it with anyone.\n"
+    "== TERMS & INSTRUCTIONS ==\n\n"
+    "> Keep this file secure and do not share it with anyone.\n"
     "> Read activation instructions carefully before proceeding.\n"
-    "> Make sure target account matches product requirements.\n"
-    "> Warranty is only valid according to specific product policies.\n\n"
+    "> Ensure target account meets all specified product requirements.\n"
+    "> Warranty applies strictly according to terms specified for each product.\n\n"
 )
 
 GOOGLE_AI_PRO_TERMS = (
     "📬 READ BEFORE ACTIVATION:\n"
-    "* Check target email account before clicking the activation button.\n"
-    "* Avoid activating on email accounts that already have an active Google Plus, Pro, or Ultra subscription.\n"
-    "* Make sure you are signed in to the correct target email during activation.\n\n"
+    "* Verify your destination email account before clicking 'Activate'.\n"
+    "* Do not activate on email accounts with an existing active Google Plus, Pro, or Ultra subscription.\n"
+    "* Ensure you are signed into the target account during activation. Check top-right corner to verify active user.\n\n"
     "🛡️ TERMS & WARRANTY:\n"
-    "> ➡️ 6-hour warranty provided to ensure activation link works properly.\n"
-    "> ➡️ Subscription activates directly on your account once completed.\n"
-    "> ➡️ No store warranty once activation process is finished.\n"
-    "> ➡️ Warranty covers initial activation only.\n\n"
+    "> ➡️ 6-hour replacement guarantee to ensure activation link functions properly.\n"
+    "> ➡️ Subscription activates instantly on your account upon completion.\n"
+    "> ➡️ Store warranty ends once activation is verified successful.\n"
+    "> ➡️ Guarantee applies strictly to the activation process.\n\n"
     "🆘 IMPORTANT NOTICE:\n"
-    "> Because this plan is managed via Jio, Google AI Pro subscription may end if the SIM plan becomes inactive. "
-    "This is why there is zero warranty after successful activation. "
-    "However, as long as the SIM plan is regularly renewed by the provider, the subscription stays active.\n\n"
+    "> This plan is managed via Jio; subscription will terminate if the underlying SIM package expires. "
+    "Therefore, this item carries zero warranty post-activation. "
+    "However, as long as Jio SIM renewals are maintained, access remains active.\n\n"
     "⚠️ Note:\n"
-    "> This redeem code can only be used once per account.\n"
+    "> Redeem code is strictly single-use per account.\n"
 )
 
 LEONARDO_AI_TERMS = (
     "🎨 HOW TO LOGIN TO LEONARDO AI:\n"
-    "1. Go to leonardo.ai\n"
-    "2. Click \"Login with Canva\"\n"
-    "3. Enter the purchased email\n"
-    "4. Wait for the OTP step\n"
-    "5. Retrieve OTP at: https://bototp.site\n"
+    "1. Visit leonardo.ai\n"
+    "2. Click 'Login with Canva'\n"
+    "3. Enter the purchased email credential\n"
+    "4. Proceed to OTP verification step\n"
+    "5. Retrieve your OTP code at: https://bototp.site\n"
 )
 
 
 async def send_product_file(context, order, contents):
-    total_val = order['total']
-    total_display = f"{total_val} USDT" if isinstance(total_val, (int, float)) else f"{total_val}"
     file_text = (
         f"PAYMENT SUCCESSFUL\n"
         f"Order ID: {order['order_id']}\n"
         f"Product: {order['product_name']} x{order['qty']}\n"
-        f"Total: {total_display}\n"
+        f"Total: {ui.fmt_price(order['total'])}\n"
         f"Timestamp: {db.utcnow().isoformat()}\n\n"
         f"== DIGITAL PRODUCT ITEMS ==\n\n"
     )
     for i, content in enumerate(contents, 1):
         file_text += f"Item {i}:\n{content}\n\n"
     file_text += GENERAL_TERMS
-    if "google" in order["product_name"].lower():
+    if "google" in order["product_name"].lower() or "gemini" in order["product_name"].lower():
         file_text += GOOGLE_AI_PRO_TERMS
     if "netflix" in order["product_name"].lower() or "netflx" in order["product_name"].lower():
         file_text += NETFLIX_VPN_TERMS
-    if "leonardo ai" in order["product_name"].lower():
+    if "leonardo" in order["product_name"].lower():
         file_text += LEONARDO_AI_TERMS
+    if "claude" in order["product_name"].lower():
+        file_text += (
+            "🧠 CLAUDE AI ACCESS GUIDE:\n"
+            "1. Check login details provided above (Email/Credentials).\n"
+            "2. If OTP is required, access OTP via: https://mailku.online/mailbox\n"
+            "3. Full warranty active as specified in product terms.\n"
+        )
+    if "chatgpt" in order["product_name"].lower() or "gpt" in order["product_name"].lower():
+        file_text += (
+            "🤖 CHATGPT PLUS ACCESS GUIDE:\n"
+            "1. Log in with provided credentials above.\n"
+            "2. If email verification/OTP needed, check: https://mailku.online/mailbox\n"
+            "3. Enjoy GPT Plus features and premium tools.\n"
+        )
+    if "notion" in order["product_name"].lower():
+        file_text += (
+            "📝 NOTION AI BUSINESS ACCESS GUIDE:\n"
+            "1. Check invitation link or login credentials provided above.\n"
+            "2. If an invite link is provided, accept it using your personal Notion workspace.\n"
+            "3. Full 12 Months access to Notion AI Business features enabled.\n"
+        )
+    if "figma" in order["product_name"].lower():
+        file_text += (
+            "🎨 FIGMA PRO EDU ACCESS GUIDE:\n"
+            "1. Log in with the account credentials provided above.\n"
+            "2. Access unlimited projects, files, and Pro features.\n"
+            "3. Full warranty active as specified in product terms.\n"
+        )
     file_text += "Thank you for purchasing!\n"
     buf = io.BytesIO(file_text.encode("utf-8"))
     buf.name = f"product-{order['order_id']}.txt"
@@ -1136,19 +1285,28 @@ async def complete_order(order_id, payment_id, context):
         db.set_order_delivered(order_id)
     except Exception as e:
         logger.error("Kirim file produk gagal: %s", e)
+    
+    total_rev, total_count = db.get_total_sales_revenue()
+    p_icon = ui.get_product_icon({"name": order['product_name']})
+
     await notify_admin(
         f"✅ <b>ORDER COMPLETED</b>\n\n"
         f"🆔 Order <code>{order_id}</code>\n"
-        f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
-        f"💰 Total: <b>Rp{order['total']:,}</b>\n"
+        f"{p_icon} {ui.esc(order['product_name'])} x{order['qty']}\n"
+        f"💰 Total: <b>{ui.fmt_price(order['total'])}</b>\n"
         f"👤 User: {order['telegram_id']}\n"
-        f"📦 Status: <b>COMPLETED</b>{' ⚠️ delivery failed' if not delivered else ''}"
+        f"📦 Status: <b>COMPLETED</b>{' ⚠️ delivery failed' if not delivered else ''}\n"
+        f"📊 Total Revenue: <b>{ui.fmt_price(total_rev)}</b> ({total_count} orders)"
     )
     await notify_channel(
-        f"✅ <b>NEW PURCHASE</b>\n\n"
-        f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
-        f"💰 Total: <b>Rp{order['total']:,}</b>\n"
-        f"📦 Status: <b>COMPLETED</b>"
+        f"🎉 <b>NEW PURCHASE REPORT</b>\n"
+        f"────────────────────\n"
+        f"{p_icon} <b>Item:</b> {ui.esc(order['product_name'])}\n"
+        f"🔢 <b>Qty :</b> {order['qty']}x\n"
+        f"💰 <b>Paid:</b> <b>{ui.fmt_price(order['total'])}</b> (Verified ⚡)\n"
+        f"────────────────────\n"
+        f"📈 <b>Total Store Volume:</b> <b>{ui.fmt_price(total_rev)}</b>\n"
+        f"🛒 <i>Instant 24/7 delivery completed via bot!</i>"
     )
     return "COMPLETED"
 
@@ -1161,33 +1319,31 @@ async def confirm_payment(query, context, order_id):
     if order["status"] != "PENDING":
         await query.answer("Order status has already updated.")
         return
-    if config.PAYMENT_METHOD == "nevapedia" or order.get("payment_id"):
-        await query.answer("This order does not require manual verification.")
-        return
-    db.set_order_status(order_id, "AWAITING_ADMIN")
-    await asyncio.to_thread(sync_order_to_sheet, db.get_order(order_id))
-    kb = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("⌂ Home", callback_data="home")]]
+
+    # Minta user mengirimkan Transaction ID / Bukti transfer
+    context.user_data["awaiting_binance_tx_for"] = order_id
+    text = (
+        f"📲 <b>Enter Payment Transaction ID</b>\n"
+        f"────────────────────\n\n"
+        f"Please paste the <b>Transaction ID</b> or <b>Pay ID</b> from your transfer receipt below 👇\n\n"
+        f"⚡ <i>Once verified, your digital product will be dispatched automatically!</i>"
     )
-    caption = (
-        f"⏳ <b>Payment Submitted for Verification</b>\n\n"
-        f"Thank you! Your payment is currently being reviewed by admin.\n"
-        f"Product will be delivered automatically upon approval. 🙏"
-    )
-    try:
-        await query.edit_message_caption(caption=caption, parse_mode="HTML", reply_markup=kb)
-    except Exception as e:
-        logger.error("Edit caption confirm gagal: %s", e)
-        if query.message is not None:
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("« Cancel", callback_data="home")]
+    ])
+    if query.message:
+        if query.message.photo:
             try:
-                await query.message.reply_text(caption, parse_mode="HTML", reply_markup=kb)
+                await query.message.delete()
             except Exception:
                 pass
-    await query.answer("Thank you! ✅")
-    await notify_admin_pending_verification(order_id)
+            await app.bot.send_message(chat_id=query.message.chat_id, text=text, parse_mode="HTML", reply_markup=kb)
+        else:
+            await safe_edit(chat_id=query.message.chat_id, message_id=query.message.message_id, text=text, reply_markup=kb)
+    return
 
 
-async def notify_admin_pending_verification(order_id):
+async def notify_admin_pending_verification(order_id, tx_id=None):
     if config.ADMIN_CHAT_ID is None:
         return
     order = db.get_order(order_id)
@@ -1201,13 +1357,15 @@ async def notify_admin_pending_verification(order_id):
             ]
         ]
     )
+    tx_str = f"🧾 <b>TxID/PayID:</b> <code>{ui.esc(tx_id)}</code>\n" if tx_id else ""
     text = (
-        f"🕐 <b>PEMBAYARAN MENUNGGU VERIFIKASI</b>\n\n"
+        f"🕐 <b>PAYMENT AWAITING VERIFICATION</b>\n\n"
         f"🆔 Order: <code>{order_id}</code>\n"
         f"🛒 {ui.esc(order['product_name'])} x{order['qty']}\n"
-        f"💰 Total: <b>Rp{order['total']:,}</b>\n"
+        f"💰 Total: <b>{ui.fmt_price(order['total'])}</b>\n"
+        f"{tx_str}"
         f"👤 User: {order['telegram_id']}\n\n"
-        f"Cek saldo yang masuk, lalu <b>Approve</b> atau <b>Reject</b>."
+        f"Verify the incoming payment in your wallet/Binance, then click <b>Approve</b> or <b>Reject</b>."
     )
     try:
         await app.bot.send_message(
@@ -1218,6 +1376,98 @@ async def notify_admin_pending_verification(order_id):
         )
     except Exception as e:
         logger.error("Notif verifikasi admin gagal: %s", e)
+
+
+async def notify_admin_pending_deposit(deposit_id, tx_id=None):
+    if config.ADMIN_CHAT_ID is None:
+        return
+    dep = db.get_deposit(deposit_id)
+    if not dep:
+        return
+    kb = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("✅ Approve Deposit", callback_data=f"app_dep:{deposit_id}"),
+                InlineKeyboardButton("❌ Reject", callback_data=f"rej_dep:{deposit_id}"),
+            ]
+        ]
+    )
+    tx_str = f"🧾 <b>TxID/PayID:</b> <code>{ui.esc(tx_id)}</code>\n" if tx_id else ""
+    text = (
+        f"💳 <b>DEPOSIT AWAITING VERIFICATION</b>\n\n"
+        f"🆔 Deposit ID: <code>{deposit_id}</code>\n"
+        f"💰 Amount: <b>{ui.fmt_price(dep['amount'])}</b>\n"
+        f"{tx_str}"
+        f"👤 User: {dep['telegram_id']} (@{dep.get('username') or '-'})\n\n"
+        f"Check incoming funds in wallet/Binance, then Approve or Reject."
+    )
+    try:
+        await app.bot.send_message(
+            chat_id=config.ADMIN_CHAT_ID,
+            text=text,
+            parse_mode="HTML",
+            reply_markup=kb,
+        )
+    except Exception as e:
+        logger.error("Notif deposit admin gagal: %s", e)
+
+
+async def admin_approve_deposit(query, context, chat_id, msg_id, deposit_id):
+    if config.ADMIN_CHAT_ID is None or str(query.from_user.id) != str(config.ADMIN_CHAT_ID):
+        await query.answer("Admin only.")
+        return
+    dep = db.get_deposit(deposit_id)
+    if not dep or dep["status"] != "PENDING":
+        await query.answer("Deposit already processed or not found.")
+        return
+    
+    if db.confirm_deposit_success(deposit_id, dep.get("tx_id") or ""):
+        await query.answer("Deposit approved! Balance added.")
+        new_bal = db.get_wallet(str(dep["telegram_id"]))
+        try:
+            await app.bot.send_message(
+                chat_id=int(dep["telegram_id"]),
+                text=(
+                    f"🎉 <b>Deposit Successful!</b>\n\n"
+                    f"Your deposit of <b>{ui.fmt_price(dep['amount'])}</b> has been verified.\n"
+                    f"💳 <b>Updated Balance:</b> <b>{ui.fmt_price(new_bal)}</b>\n\n"
+                    f"You can now use <b>1-Click Pay with Balance</b> on your orders!"
+                ),
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            logger.error("Notif deposit user gagal: %s", e)
+        try:
+            await safe_edit(chat_id=chat_id, message_id=msg_id, text=f"✅ Deposit <code>{deposit_id}</code> approved (+{ui.fmt_price(dep['amount'])}).", reply_markup=InlineKeyboardMarkup([]))
+        except Exception:
+            pass
+
+
+async def admin_reject_deposit(query, context, chat_id, msg_id, deposit_id):
+    if config.ADMIN_CHAT_ID is None or str(query.from_user.id) != str(config.ADMIN_CHAT_ID):
+        await query.answer("Admin only.")
+        return
+    dep = db.get_deposit(deposit_id)
+    if not dep or dep["status"] != "PENDING":
+        await query.answer("Deposit already processed.")
+        return
+    conn = db.get_conn()
+    conn.execute("UPDATE deposits SET status='FAILED' WHERE deposit_id=?", (deposit_id,))
+    conn.commit()
+    conn.close()
+    await query.answer("Deposit rejected.")
+    try:
+        await app.bot.send_message(
+            chat_id=int(dep["telegram_id"]),
+            text="❌ Your deposit transfer could not be verified. If you already sent funds, please contact support.",
+            parse_mode="HTML"
+        )
+    except Exception:
+        pass
+    try:
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=f"❌ Deposit <code>{deposit_id}</code> rejected.", reply_markup=InlineKeyboardMarkup([]))
+    except Exception:
+        pass
 
 
 async def admin_approve(query, context, chat_id, msg_id, order_id):
@@ -1312,11 +1562,11 @@ async def check_payments(context: ContextTypes.DEFAULT_TYPE):
 
 async def notify_affiliate(referrer_uid, amount, order_id):
     text = (
-        f"🎉 <b>Komisi Masuk!</b>\n\n"
-        f"Referralmu melakukan pembelian.\n"
+        f"🎉 <b>Commission Received!</b>\n\n"
+        f"Your referral completed a purchase.\n"
         f"🧾 Order: <code>{order_id}</code>\n"
-        f"💰 Komisi: <b>Rp{amount:,}</b>\n\n"
-        f"Cek saldo dengan /affiliate"
+        f"💰 Commission: <b>{ui.fmt_price(amount)}</b>\n\n"
+        f"Check your balance with /affiliate"
     )
     try:
         await app.bot.send_message(
@@ -1330,26 +1580,25 @@ def affiliate_text(uid):
     link = (
         f"https://t.me/{bot_username}?start=ref_{uid}"
         if bot_username
-        else "BOT_USERNAME belum terdeteksi"
+        else "BOT_USERNAME not detected yet"
     )
     balance = db.get_wallet(uid)
     refs = db.count_referrals(uid)
     text = (
-        f"🤝 <b>PROGRAM AFILIASI</b>\n\n"
-        f"Bagikan link di bawah ini. Kamu dapat komisi "
-        f"<b>{config.AFFILIATE_PERCENT}%</b> dari setiap pembelian "
-        f"berhasil lewat linkmu!\n\n"
+        f"🤝 <b>AFFILIATE PROGRAM</b>\n\n"
+        f"Share your link below to earn "
+        f"<b>{config.AFFILIATE_PERCENT}%</b> commission on every successful purchase!\n\n"
         f"🔗 <code>{link}</code>\n\n"
-        f"📊 Referral: <b>{refs}</b> orang\n"
-        f"💰 Saldo komisi: <b>Rp{balance:,}</b>\n\n"
-        f"Pencairan manual — hubungi admin ya."
+        f"📊 Referrals: <b>{refs}</b> users\n"
+        f"💰 Commission balance: <b>{ui.fmt_price(balance)}</b>\n\n"
+        f"Manual payout — please contact admin."
     )
     comms = db.get_commissions(uid, 5)
     if comms:
-        text += "\n\n🧾 <b>Komisi terakhir:</b>\n"
+        text += "\n\n🧾 <b>Recent Commissions:</b>\n"
         for c in comms:
-            status = "✅ dicairkan" if c["status"] == "PAID" else "⏳ pending"
-            text += f"• <code>{c['order_id']}</code> Rp{c['amount']:,} · {status}\n"
+            status = "✅ paid" if c["status"] == "PAID" else "⏳ pending"
+            text += f"• <code>{c['order_id']}</code> {ui.fmt_price(c['amount'])} · {status}\n"
     return text
 
 
@@ -1361,41 +1610,41 @@ async def affiliate_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def admin_affiliates_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if config.ADMIN_CHAT_ID is None or str(update.effective_user.id) != str(config.ADMIN_CHAT_ID):
-        await update.message.reply_text("Khusus admin.")
+        await update.message.reply_text("Admin only.")
         return
     rows = db.get_all_wallets()
     if not rows:
-        await update.message.reply_text("Belum ada komisi tercatat.")
+        await update.message.reply_text("No recorded commissions yet.")
         return
-    text = "🤝 <b>DAFTAR REFERRER & KOMISI</b>\n\n"
+    text = "🤝 <b>AFFILIATE & COMMISSION LEDGER</b>\n\n"
     for i, w in enumerate(rows, 1):
         text += (
             f"{i}. UID <code>{w['uid']}</code>\n"
-            f"   👥 {w['referrals']} ref · 🧾 {w['total_comm']} komisi · "
-            f"💰 <b>Rp{w['balance']:,}</b>\n"
+            f"   👥 {w['referrals']} ref · 🧾 {w['total_comm']} comms · "
+            f"💰 <b>{ui.fmt_price(w['balance'])}</b>\n"
         )
-    text += "\nCairkan: /payout &lt;uid&gt;"
+    text += "\nPayout: /payout &lt;uid&gt;"
     await update.message.reply_text(text, parse_mode="HTML")
 
 
 async def admin_payout_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if config.ADMIN_CHAT_ID is None or str(update.effective_user.id) != str(config.ADMIN_CHAT_ID):
-        await update.message.reply_text("Khusus admin.")
+        await update.message.reply_text("Admin only.")
         return
     if not context.args:
         await update.message.reply_text("Format: /payout <uid>")
         return
     uid = context.args[0]
     if not uid.isdigit():
-        await update.message.reply_text("UID harus berupa angka.")
+        await update.message.reply_text("UID must be numbers.")
         return
     n = db.mark_payout(uid)
-    await update.message.reply_text(f"✅ {n} komisi UID <code>{ui.esc(uid)}</code> ditandai PAID.", parse_mode="HTML")
+    await update.message.reply_text(f"✅ {n} commissions for UID <code>{ui.esc(uid)}</code> marked PAID.", parse_mode="HTML")
     if n and uid.isdigit():
         try:
             await context.bot.send_message(
                 chat_id=int(uid),
-                text="🎉 Komisi kamu sudah dicairkan oleh admin. Terima kasih! 💵",
+                text="🎉 Your affiliate commission has been paid out by admin. Thank you! 💵",
             )
         except Exception as e:
             logger.error("Notif payout gagal: %s", e)
@@ -1457,7 +1706,7 @@ async def admin_addstock_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE)
     result = await asyncio.to_thread(add_stock_to_sheet, product_id, items)
     if not result:
         await update.message.reply_text(
-            "❌ Gagal menambah stok. Cek SHEET_WRITE_URL atau Apps Script."
+            "❌ Failed to add stock. Check SHEET_WRITE_URL or Apps Script."
         )
         return
 
@@ -1469,10 +1718,10 @@ async def admin_addstock_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE)
     now_str = (datetime.now() + timedelta(hours=7)).strftime("%d/%m/%Y %H:%M")
 
     await update.message.reply_text(
-        f"✅ <b>Stok berhasil ditambah!</b>\n\n"
-        f"🛒 Produk: {ui.esc(product['name'])} (<code>{product_id}</code>)\n"
-        f"📦 Jumlah: <b>{added}</b> item\n\n"
-        f"Stok akan tersinkron otomatis di /menu berikutnya.",
+        f"✅ <b>Stock added successfully!</b>\n\n"
+        f"🛒 Product: {ui.esc(product['name'])} (<code>{product_id}</code>)\n"
+        f"📦 Added: <b>{added}</b> items\n\n"
+        f"Stock will update automatically on next /menu.",
         parse_mode="HTML",
     )
 
@@ -1500,11 +1749,12 @@ async def notify_admin(text):
 
 
 async def notify_channel(text):
-    if not config.CHANNEL_USERNAME:
+    target = getattr(config, "REPORT_CHANNEL", None) or config.CHANNEL_USERNAME
+    if not target:
         return
     try:
         await app.bot.send_message(
-            chat_id=config.CHANNEL_USERNAME, text=text, parse_mode="HTML"
+            chat_id=target, text=text, parse_mode="HTML"
         )
     except Exception as e:
         logger.error("Notifikasi channel gagal: %s", e)
@@ -1577,7 +1827,7 @@ async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             ]
         )
-    admin_user = (db.get_setting("ADMIN_USERNAME", "") or config.ADMIN_USERNAME or "").strip().lstrip("@")
+    admin_user = "Dominicexo"
     if admin_user:
         buttons.append(
             [InlineKeyboardButton("💬 Contact Support", url=f"https://t.me/{admin_user}")]
@@ -1597,8 +1847,84 @@ async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (update.message.text or "").strip()
     
-    # 1. Cek jika user sedang mengetik custom quantity
-    awaiting_pid = context.user_data.get("awaiting_qty_for")
+    # 0. Debugger pembaca ID Custom Emoji animasi Telegram Premium
+    if update.message and update.message.entities:
+        for ent in update.message.entities:
+            if ent.type == "custom_emoji" and ent.custom_emoji_id:
+                await update.message.reply_text(
+                    f"✨ <b>Custom Animated Emoji Detected!</b>\n"
+                    f"🆔 <code>{ent.custom_emoji_id}</code>\n\n"
+                    f"HTML Tag:\n"
+                    f"<code>&lt;tg-emoji emoji-id=\"{ent.custom_emoji_id}\"&gt;⭐&lt;/tg-emoji&gt;</code>",
+                    parse_mode="HTML"
+                )
+                return
+
+    # 0.3. User mengetik nominal custom deposit
+    if context.user_data.get("awaiting_deposit_amount"):
+        context.user_data.pop("awaiting_deposit_amount", None)
+        try:
+            val = float(text.replace("$", "").replace(",", "").strip())
+            if val < 1.0:
+                await update.message.reply_text("Minimum deposit amount is $1.00. Please try again.")
+                return
+            dep_id = "DEP-" + uuid.uuid4().hex[:8].upper()
+            db.create_deposit(dep_id, update.effective_user.id, update.effective_user.username or "", val, "crypto")
+            dep = db.get_deposit(dep_id)
+            d_text, d_kb = ui.deposit_pay_page(dep)
+            await update.message.reply_text(d_text, parse_mode="HTML", reply_markup=d_kb)
+            return
+        except ValueError:
+            await update.message.reply_text("Invalid amount format. Please enter a valid number (e.g. 10 or 25).")
+            return
+
+    # 0.4. User mengirimkan Transaction ID / Pay ID untuk Top-Up
+    awaiting_dep_id = context.user_data.get("awaiting_dep_tx_for")
+    if awaiting_dep_id and len(text) >= 4:
+        target_dep = awaiting_dep_id
+        context.user_data.pop("awaiting_dep_tx_for", None)
+        dep = db.get_deposit(target_dep)
+        if not dep:
+            await update.message.reply_text("Deposit request expired. Please initiate a new top-up.")
+            return
+
+        tx_val = text.strip()
+        conn = db.get_conn()
+        conn.execute("UPDATE deposits SET tx_id=? WHERE deposit_id=?", (tx_val, target_dep))
+        conn.commit()
+        conn.close()
+
+        await update.message.reply_text(
+            "⚡ <b>Deposit Verification in Progress</b>\n────────────────────\n"
+            f"ID: <code>{target_dep}</code>\nAmount: <b>{ui.fmt_price(dep['amount'])}</b>\n\n"
+            "Matching your transaction with the payment network. Your balance will update automatically upon verification! 🚀",
+            parse_mode="HTML"
+        )
+        await notify_admin_pending_deposit(target_dep, tx_id=tx_val)
+        return
+    awaiting_tx_oid = context.user_data.get("awaiting_binance_tx_for")
+    if awaiting_tx_oid and len(text) >= 4:
+        target_oid = awaiting_tx_oid
+        order = db.get_order(target_oid)
+        if not order:
+            context.user_data.pop("awaiting_binance_tx_for", None)
+            await update.message.reply_text("Order expired or not found. Please start a new order with /start.")
+            return
+
+        context.user_data.pop("awaiting_binance_tx_for", None)
+        tx_submitted = text.strip()
+        
+        # Simpan payment ID (TxID) dan ubah status order ke AWAITING_ADMIN
+        db.update_payment_id(target_oid, tx_submitted)
+        db.set_order_status(target_oid, "AWAITING_ADMIN")
+        await asyncio.to_thread(sync_order_to_sheet, db.get_order(target_oid))
+
+        await_txt, await_kb = ui.awaiting_admin_page(target_oid)
+        await update.message.reply_text(await_txt, parse_mode="HTML", reply_markup=await_kb)
+
+        # Kirim notifikasi lengkap ke Admin beserta Transaction ID yang diinput user
+        await notify_admin_pending_verification(target_oid, tx_id=tx_submitted)
+        return
     if awaiting_pid and text.isdigit():
         target_qty = int(text)
         product = get_product(awaiting_pid)
@@ -1645,8 +1971,7 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text_msg, kb = soldout_page()
                 await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
             else:
-                qty = context.user_data.get("qty", 1)
-                text_msg, kb = ui.product_page(product, qty)
+                text_msg, kb = ui.product_page(product, 1)
                 await update.message.reply_text(text_msg, parse_mode="HTML", reply_markup=kb)
             return
 

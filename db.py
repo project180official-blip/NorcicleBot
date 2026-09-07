@@ -86,7 +86,20 @@ def init_db():
     c.execute(
         """CREATE TABLE IF NOT EXISTS wallets (
             uid TEXT PRIMARY KEY,
-            balance INTEGER DEFAULT 0
+            balance REAL DEFAULT 0
+        )"""
+    )
+    c.execute(
+        """CREATE TABLE IF NOT EXISTS deposits (
+            deposit_id TEXT PRIMARY KEY,
+            telegram_id TEXT,
+            username TEXT,
+            amount REAL,
+            method TEXT,
+            tx_id TEXT,
+            status TEXT,
+            created_at TEXT,
+            confirmed_at TEXT
         )"""
     )
     _migrate_stock_columns(conn)
@@ -501,6 +514,16 @@ def count_all_available():
     return row["c"]
 
 
+def get_total_sales_revenue():
+    """Menghitung total akumulasi penjualan yang sudah berstatus COMPLETED."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT COALESCE(SUM(total), 0) as s, COUNT(*) as count FROM orders WHERE status='COMPLETED'"
+    ).fetchone()
+    conn.close()
+    return float(row["s"]), int(row["count"])
+
+
 def set_referred(referred_uid, referrer_uid):
     conn = get_conn()
     c = conn.cursor()
@@ -554,7 +577,98 @@ def get_wallet(uid):
         "SELECT balance FROM wallets WHERE uid=?", (str(uid),)
     ).fetchone()
     conn.close()
-    return row["balance"] if row else 0
+    return float(row["balance"]) if row else 0.0
+
+
+def add_user_balance(uid, amount):
+    conn = get_conn()
+    conn.execute(
+        """INSERT INTO wallets (uid, balance) VALUES (?,?)
+           ON CONFLICT(uid) DO UPDATE SET balance=round(balance+excluded.balance, 2)""",
+        (str(uid), round(float(amount), 2)),
+    )
+    conn.commit()
+    conn.close()
+
+
+def deduct_user_balance(uid, amount):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("BEGIN IMMEDIATE")
+    try:
+        row = c.execute("SELECT balance FROM wallets WHERE uid=?", (str(uid),)).fetchone()
+        current = float(row["balance"]) if row else 0.0
+        cost = round(float(amount), 2)
+        if current < cost:
+            conn.rollback()
+            conn.close()
+            return False
+        c.execute(
+            "UPDATE wallets SET balance=round(balance - ?, 2) WHERE uid=?",
+            (cost, str(uid))
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
+
+
+def create_deposit(deposit_id, telegram_id, username, amount, method):
+    conn = get_conn()
+    conn.execute(
+        """INSERT INTO deposits (deposit_id, telegram_id, username, amount, method, status, created_at)
+           VALUES (?,?,?,?,?,?,?)""",
+        (
+            deposit_id,
+            str(telegram_id),
+            username,
+            round(float(amount), 2),
+            method,
+            "PENDING",
+            utcnow().isoformat(),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_deposit(deposit_id):
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM deposits WHERE deposit_id=?", (deposit_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def confirm_deposit_success(deposit_id, tx_id=""):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("BEGIN IMMEDIATE")
+    try:
+        dep = c.execute("SELECT * FROM deposits WHERE deposit_id=?", (deposit_id,)).fetchone()
+        if not dep or dep["status"] != "PENDING":
+            conn.rollback()
+            conn.close()
+            return False
+        now = utcnow().isoformat()
+        c.execute(
+            "UPDATE deposits SET status='COMPLETED', tx_id=?, confirmed_at=? WHERE deposit_id=?",
+            (str(tx_id), now, deposit_id)
+        )
+        c.execute(
+            """INSERT INTO wallets (uid, balance) VALUES (?,?)
+               ON CONFLICT(uid) DO UPDATE SET balance=round(balance+excluded.balance, 2)""",
+            (str(dep["telegram_id"]), round(float(dep["amount"]), 2))
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
 
 
 def count_referrals(uid):
