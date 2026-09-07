@@ -184,23 +184,20 @@ def product_line(p):
 
 def home_text(user_name=None, user_id=None):
     products = db.get_active_products()
-    name_str = f", <b>{esc(user_name)}</b>" if user_name else ""
     balance_val = db.get_wallet(str(user_id)) if user_id else 0.0
+    user_greeting = f"<b>{esc(user_name)}</b>" if user_name else "Valued Customer"
 
     text = (
-        f"{EMOJI_STORE} <b>{BRAND} OFFICIAL STORE</b>{name_str} {EMOJI_VERIFIED}\n"
-        f"────────────────────\n"
-        f"💳 <b>Your Balance:</b> <b>{fmt_price(balance_val)}</b>\n"
-        f"{EMOJI_CLOCK} <i>Instant Automated 24/7 Delivery</i>\n"
-        f"{EMOJI_MONEY} <i>Direct Wholesale Digital Subscriptions</i>\n\n"
-        f"<b>{EMOJI_CART} Select a product below to purchase:</b>"
+        f"👋 Welcome to <b>{BRAND}</b>, {user_greeting}!\n\n"
+        f"Your trusted provider for premium digital subscriptions and accounts with instant automated delivery.\n\n"
+        f"💳 Balance: <b>{fmt_price(balance_val)}</b>\n\n"
+        f"Choose an item below to view options and order:"
     )
 
     rows = []
-    # Baris tombol produk dengan icon_custom_emoji_id & style success (hijau)
     for p in products:
         avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail} Ready" if avail > 0 else "🔴 Sold Out"
+        stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 Sold Out"
         pname = str(p.get("name", "")).lower()
         emoji_id = get_product_emoji_id(p)
         if p.get("id") == "P0001" or "gemini" in pname:
@@ -215,18 +212,16 @@ def home_text(user_name=None, user_id=None):
         )
         rows.append([btn])
 
-    # Navigasi Menu
+    # Navigasi Menu yang ringkas & rapi
     rows.append([
-        InlineKeyboardButton("💳 Top Up Balance", callback_data="topup"),
-        InlineKeyboardButton("📦 Live Vault", callback_data="stock"),
+        InlineKeyboardButton("💳 Top Up", callback_data="topup"),
+        InlineKeyboardButton("📦 Stock", callback_data="stock"),
+        InlineKeyboardButton("🧾 Orders", callback_data="orders"),
     ])
     rows.append([
-        InlineKeyboardButton("🧾 Orders Log", callback_data="orders"),
-        InlineKeyboardButton("🤝 Affiliate (5%)", callback_data="affiliate"),
-    ])
-    rows.append([
-        InlineKeyboardButton("💬 Support Desk", callback_data="contact"),
-        InlineKeyboardButton("🔄 Refresh Store", callback_data="refresh"),
+        InlineKeyboardButton("💬 Support", callback_data="contact"),
+        InlineKeyboardButton("🤝 Affiliate", callback_data="affiliate"),
+        InlineKeyboardButton("🔄 Refresh", callback_data="refresh"),
     ])
 
     return text, InlineKeyboardMarkup(rows)
@@ -332,18 +327,18 @@ def product_page(product, qty):
     unit_price, total = calculate_item_price(product, qty)
     sold_out = avail < 1
 
-    stock_badge = f"🟢 {avail} in stock" if avail > 0 else "🔴 Out of Stock"
+    stock_badge = f"🟢 {avail} in stock" if avail > 0 else "🔴 Out of stock"
     pname = str(product.get("name", "")).lower()
     icon = get_product_icon(product)
     
     tier_block = ""
     if product.get("id") == "P0001" or "gemini" in pname:
         tier_block = (
-            f"\n💎 <b>Wholesale Tiers:</b>\n"
-            f"• 1 pcs     : <b>$0.90</b>\n"
-            f"• 2 – 4 pcs : <b>$0.80</b> / ea\n"
-            f"• 5 – 9 pcs : <b>$0.70</b> / ea\n"
-            f"• 10+ pcs   : <b>$0.50</b> / ea\n"
+            f"\nWholesale Pricing:\n"
+            f"• 1 pcs: $0.90\n"
+            f"• 2–4 pcs: $0.80/ea\n"
+            f"• 5–9 pcs: $0.70/ea\n"
+            f"• 10+ pcs: $0.50/ea\n"
         )
 
     desc = esc(product['description']).strip()
@@ -351,17 +346,13 @@ def product_page(product, qty):
         desc = desc.lstrip("✨").strip()
 
     text = (
-        f"{icon} <b>{esc(product['name'])}</b> {EMOJI_VERIFIED}\n"
-        f"────────────────────\n"
+        f"{icon} <b>{esc(product['name'])}</b>\n\n"
         f"{desc}\n"
         f"{tier_block}\n"
-        f"────────────────────\n"
-        f"• <b>Unit Price:</b> {fmt_price(unit_price)}\n"
-        f"• <b>Available:</b> {stock_badge}\n"
-        f"• <b>Delivery :</b> Instant Automated 24/7\n\n"
-        f"🛒 <b>Order Summary:</b>\n"
-        f"<b>{qty}x</b> {esc(product['name'])} = <b>{fmt_price(total)}</b>\n"
-        f"────────────────────"
+        f"Price: <b>{fmt_price(unit_price)}</b>\n"
+        f"Stock: {stock_badge}\n"
+        f"Delivery: Instant\n\n"
+        f"Total: <b>{qty}x = {fmt_price(total)}</b>"
     )
 
     if sold_out:
@@ -495,15 +486,13 @@ def payment_method_page(order, usdt_amount=None, user_balance=0.0):
     icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
     bal_str = fmt_price(user_balance)
     text = (
-        f"{EMOJI_VERIFIED} <b>SECURE CHECKOUT</b>\n"
-        f"────────────────────\n\n"
-        f"{icon} <b>Item     :</b> {esc(order['product_name'])}\n"
-        f"🔢 <b>Quantity :</b> {order['qty']}x\n"
-        f"💰 <b>Total Due:</b> <b>{fmt_price(order['total'])}</b> (<b>{amt:.2f} USDT</b>)\n"
-        f"💳 <b>Wallet   :</b> <b>{bal_str}</b>\n"
-        f"🧾 <b>Order ID :</b> <code>{order['order_id']}</code>\n\n"
-        f"────────────────────\n"
-        f"Select your preferred payment channel below:"
+        f"<b>Order Checkout</b>\n\n"
+        f"Product: {icon} <b>{esc(order['product_name'])}</b>\n"
+        f"Quantity: {order['qty']}x\n"
+        f"Total: <b>{fmt_price(order['total'])}</b> ({amt:.2f} USDT)\n"
+        f"Balance: <b>{bal_str}</b>\n"
+        f"Order ID: <code>{order['order_id']}</code>\n\n"
+        f"Choose your payment method below:"
     )
     buttons = []
     # Jika saldo mencukupi, tampilkan tombol bayar instan pakai saldo!
