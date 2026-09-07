@@ -207,7 +207,7 @@ def set_setting(key, value):
 def get_active_products():
     conn = get_conn()
     rows = conn.execute(
-        "SELECT * FROM products WHERE status='ACTIVE' ORDER BY id"
+        "SELECT * FROM products WHERE status='ACTIVE' ORDER BY price ASC"
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
