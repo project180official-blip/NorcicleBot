@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: plantyshop-bot
+    name: wooblebot
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt

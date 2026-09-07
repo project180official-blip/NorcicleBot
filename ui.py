@@ -5,7 +5,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CopyTextButton
 import config
 import db
 
-BRAND = "PLANTY SHOP"
+BRAND = "WOOBLE SHOP"
 
 
 # Custom Animated Emoji IDs (Telegram Premium)
