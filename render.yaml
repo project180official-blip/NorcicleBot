@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: norcicle-bot
+    name: plantyshop-bot
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt

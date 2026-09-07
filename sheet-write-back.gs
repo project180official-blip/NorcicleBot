@@ -258,8 +258,8 @@ function setupSheets() {
   if (!shSet) shSet = ss.insertSheet('SETTINGS');
   if (shSet.getLastRow() === 0) {
     shSet.appendRow(['KEY', 'VALUE']);
-    shSet.appendRow(['STORE_NAME', 'Norcicle Shop']);
-    shSet.appendRow(['BOT_USERNAME', 'NorcicleBot']);
+    shSet.appendRow(['STORE_NAME', 'Planty Shop']);
+    shSet.appendRow(['BOT_USERNAME', 'PlantyShop_Bot']);
     shSet.appendRow(['ADMIN_USERNAME', 'Norcicle']);
     shSet.appendRow(['CURRENCY', 'USD']);
   }
