@@ -451,7 +451,7 @@ def orders_page(user_id):
 
 
 def contact_page():
-    admin = "uscosmoxyz"
+    admin = "urcosmoxyz"
     text = (
         f"💬 <b>NEED HELP?</b>\n"
         f"────────────────────\n\n"
@@ -468,7 +468,7 @@ def contact_page():
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("💬 Chat Admin (@uscosmoxyz)", url=f"https://t.me/{admin}")],
+            [InlineKeyboardButton("💬 Chat Admin (@urcosmoxyz)", url=f"https://t.me/{admin}")],
             [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
