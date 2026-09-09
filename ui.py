@@ -54,16 +54,16 @@ def force_join_page():
     text = (
         f"{EMOJI_STAR} <b>{BRAND}</b> {EMOJI_VERIFIED}\n"
         f"────────────────────\n\n"
-        f"🔒 <b>Satu langkah lagi!</b>\n\n"
-        f"Join channel resmi kami dulu buat dapetin akses ke toko, update stok, dan drop eksklusif:\n\n"
+        f"🔒 <b>One more step!</b>\n\n"
+        f"Join our official channel to unlock the store, exclusive drops, and stock updates:\n\n"
         f"👉 <b>{channel}</b>\n\n"
-        f"Udah join? Tap tombol di bawah.\n"
+        f"Already in? Hit the button below.\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("📢 Join Channel Sekarang", url=channel_link)],
-            [InlineKeyboardButton("✅ Udah Join, Lanjut!", callback_data="checkjoin")],
+            [InlineKeyboardButton("📢 Join Channel", url=channel_link)],
+            [InlineKeyboardButton("✅ Done, Let Me In!", callback_data="checkjoin")],
         ]
     )
     return text, keyboard
@@ -74,11 +74,6 @@ def calculate_item_price(product, qty):
     pname = str(product.get("name", "")).lower()
     base_price = float(product.get("price", 0))
 
-    # Tiered pricing khusus Gemini AI:
-    # 1 pcs: $0.90
-    # 2 - 4 pcs: $0.80
-    # 5 - 9 pcs: $0.70
-    # >= 10 pcs: $0.50
     if pid == "P0001" or "gemini" in pname:
         if qty >= 10:
             unit_price = 0.5
@@ -186,14 +181,14 @@ def product_line(p):
 def home_text(user_name=None, user_id=None):
     products = db.get_active_products()
     balance_val = db.get_wallet(str(user_id)) if user_id else 0.0
-    user_greeting = f"<b>{esc(user_name)}</b>" if user_name else "bestie"
+    user_greeting = f"<b>{esc(user_name)}</b>" if user_name else "there"
 
     text = (
         f"✦ <b>{BRAND}</b> ✦\n\n"
-        f"Halo, {user_greeting}! 👋\n"
-        f"Premium digital accounts — harga terjangkau, langsung dikirim otomatis.\n\n"
-        f"💳 Saldo kamu: <b>{fmt_price(balance_val)}</b>\n\n"
-        f"Pilih produk di bawah:"
+        f"Hey, {user_greeting}! 👋\n"
+        f"Premium digital accounts — affordable prices, delivered instantly & automatically.\n\n"
+        f"💳 Your balance: <b>{fmt_price(balance_val)}</b>\n\n"
+        f"Pick something below:"
     )
 
     rows = []
@@ -214,11 +209,10 @@ def home_text(user_name=None, user_id=None):
         )
         rows.append([btn])
 
-    # Navigasi Menu yang ringkas & rapi
     rows.append([
         InlineKeyboardButton("💳 Top Up", callback_data="topup"),
-        InlineKeyboardButton("📦 Stok", callback_data="stock"),
-        InlineKeyboardButton("🧾 Pesanan", callback_data="orders"),
+        InlineKeyboardButton("📦 Stock", callback_data="stock"),
+        InlineKeyboardButton("🧾 Orders", callback_data="orders"),
     ])
     rows.append([
         InlineKeyboardButton("💬 Support", callback_data="contact"),
@@ -233,29 +227,29 @@ def promo_page():
     products = sorted(db.get_active_products(), key=lambda p: p["price"], reverse=True)
     if not products:
         text = (
-            f"🔥 <b>PROMO & PENAWARAN</b>\n"
+            f"🔥 <b>DEALS & PROMOS</b>\n"
             f"────────────────────\n\n"
-            f"Belum ada promo aktif sekarang.\n"
-            f"Pantau terus ya!\n\n"
+            f"No active promos right now.\n"
+            f"Check back soon!\n\n"
             f"────────────────────"
         )
         keyboard = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("« Balik ke Menu", callback_data="home")]]
+            [[InlineKeyboardButton("« Back to Menu", callback_data="home")]]
         )
         return text, keyboard
-    
+
     items = [product_line(p) for p in products]
     text = (
-        f"🔥 <b>DEALS TERBAIK BUAT KAMU</b>\n"
+        f"🔥 <b>BEST DEALS FOR YOU</b>\n"
         f"────────────────────\n\n"
         f"{chr(10).join(items)}\n\n"
         f"────────────────────\n"
-        f"⚡ <i>Stok terbatas — jangan sampai kehabisan!</i>"
+        f"⚡ <i>Limited stock — don't sleep on it!</i>"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🛍️ Lihat Semua Produk", callback_data="catalog")],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("🛍️ Browse All Products", callback_data="catalog")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -265,24 +259,24 @@ def catalog_text():
     products = db.get_active_products()
     if not products:
         text = (
-            f"🛍️ <b>KATALOG PRODUK</b>\n"
+            f"🛍️ <b>PRODUCT CATALOG</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Stok lagi kosong nih. Coba lagi sebentar ya!\n\n"
+            f"Nothing in stock right now. Check back soon!\n\n"
             f"━━━━━━━━━━━━━━━━━━━━"
         )
         keyboard = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("« Balik ke Menu", callback_data="home")]]
+            [[InlineKeyboardButton("« Back to Menu", callback_data="home")]]
         )
         return text, keyboard
 
     items_list = []
     for i, p in enumerate(products, 1):
         avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail} tersedia" if avail > 0 else "🔴 Habis"
+        stock_badge = f"🟢 {avail} available" if avail > 0 else "🔴 Out of Stock"
         pname = str(p.get("name", "")).lower()
         icon = get_product_icon(p)
         if p.get("id") == "P0001" or "gemini" in pname:
-            price_tag = "$0.80 ($0.70 untuk 5+ | $0.50 untuk 10+)"
+            price_tag = "$0.80 ($0.70 for 5+ | $0.50 for 10+)"
         else:
             price_tag = fmt_price(p['price'])
         items_list.append(
@@ -291,17 +285,17 @@ def catalog_text():
         )
 
     text = (
-        f"🛍️ <b>KATALOG PRODUK</b>\n"
+        f"🛍️ <b>PRODUCT CATALOG</b>\n"
         f"────────────────────\n\n"
         f"{chr(10).join(items_list)}\n\n"
         f"────────────────────\n"
-        f"<i>Pilih produk buat lihat detail & order:</i>"
+        f"<i>Tap a product to see details & order:</i>"
     )
 
     rows = []
     for p in products:
         avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 Habis"
+        stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 Sold Out"
         pname = str(p.get("name", "")).lower()
         emoji_id = get_product_emoji_id(p)
         if p.get("id") == "P0001" or "gemini" in pname:
@@ -318,8 +312,8 @@ def catalog_text():
 
     rows.append(
         [
-            InlineKeyboardButton("📦 Cek Stok Live", callback_data="stock"),
-            InlineKeyboardButton("« Menu Utama", callback_data="home"),
+            InlineKeyboardButton("📦 Live Stock", callback_data="stock"),
+            InlineKeyboardButton("« Main Menu", callback_data="home"),
         ]
     )
     return text, InlineKeyboardMarkup(rows)
@@ -333,11 +327,11 @@ def product_page(product, qty):
     stock_badge = f"🟢 {avail} in stock" if avail > 0 else "🔴 Out of stock"
     pname = str(product.get("name", "")).lower()
     icon = get_product_icon(product)
-    
+
     tier_block = ""
     if product.get("id") == "P0001" or "gemini" in pname:
         tier_block = (
-            f"\n💡 Harga Makin Banyak Makin Murah:\n"
+            f"\n💡 Bulk Pricing:\n"
             f"• 1 pcs: $0.90\n"
             f"• 2–4 pcs: $0.80/ea\n"
             f"• 5–9 pcs: $0.70/ea\n"
@@ -352,23 +346,23 @@ def product_page(product, qty):
         f"{icon} <b>{esc(product['name'])}</b>\n\n"
         f"{desc}\n"
         f"{tier_block}\n"
-        f"💰 Harga: <b>{fmt_price(unit_price)}</b>\n"
-        f"📦 Stok: {stock_badge}\n"
-        f"⚡ Pengiriman: Instan & Otomatis\n\n"
+        f"💰 Price: <b>{fmt_price(unit_price)}</b>\n"
+        f"📦 Stock: {stock_badge}\n"
+        f"⚡ Delivery: Instant & Automated\n\n"
         f"🛒 Total: <b>{qty}x = {fmt_price(total)}</b>"
     )
 
     if sold_out:
         rows = [
-            [InlineKeyboardButton("🔴 Stok Habis", callback_data="noop")],
+            [InlineKeyboardButton("🔴 Out of Stock", callback_data="noop")],
             [
-                InlineKeyboardButton("« Katalog", callback_data="catalog"),
+                InlineKeyboardButton("« Catalog", callback_data="catalog"),
                 InlineKeyboardButton("« Menu", callback_data="home"),
             ],
         ]
     else:
         buy_btn = InlineKeyboardButton(
-            f"⚡ Order Sekarang • {fmt_price(total)}",
+            f"⚡ Order Now • {fmt_price(total)}",
             callback_data=f"buy:{product['id']}",
             api_kwargs={"icon_custom_emoji_id": "5222184635659747645", "style": "success"}
         )
@@ -379,11 +373,11 @@ def product_page(product, qty):
                 InlineKeyboardButton("➕", callback_data=f"qtyinc:{product['id']}"),
             ],
             [
-                InlineKeyboardButton("✏️ Jumlah Custom", callback_data=f"customqty:{product['id']}"),
+                InlineKeyboardButton("✏️ Custom Qty", callback_data=f"customqty:{product['id']}"),
             ],
             [buy_btn],
             [
-                InlineKeyboardButton("« Katalog", callback_data="catalog"),
+                InlineKeyboardButton("« Catalog", callback_data="catalog"),
                 InlineKeyboardButton("« Menu", callback_data="home"),
             ],
         ]
@@ -394,21 +388,21 @@ def stock_page():
     products = db.get_active_products()
     items = []
     if not products:
-        items.append("Belum ada produk aktif.")
+        items.append("No active products found.")
     for p in products:
         items.append(product_line(p))
-    
+
     text = (
-        f"📦 <b>CEK STOK LIVE</b> {EMOJI_VERIFIED}\n"
+        f"📦 <b>LIVE STOCK</b> {EMOJI_VERIFIED}\n"
         f"────────────────────\n\n"
         f"{chr(10).join(items)}\n\n"
         f"────────────────────\n"
-        f"{EMOJI_LIGHTNING} <i>Stok diupdate real-time dari server.</i>"
+        f"{EMOJI_LIGHTNING} <i>Updated in real-time from our servers.</i>"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🛍️ Lihat Katalog", callback_data="catalog")],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("🛍️ Browse Catalog", callback_data="catalog")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -418,10 +412,9 @@ def orders_page(user_id):
     rows = db.get_my_orders(user_id)
     if not rows:
         text = (
-            f"🧾 <b>RIWAYAT PESANAN</b>\n"
+            f"🧾 <b>ORDER HISTORY</b>\n"
             f"────────────────────\n\n"
-            f"Belum ada pesanan nih.\n"
-            f"Yuk mulai belanja! 🛍️\n\n"
+            f"No orders yet — go grab something! 🛍️\n\n"
             f"────────────────────"
         )
     else:
@@ -442,7 +435,7 @@ def orders_page(user_id):
                 f"   └ Status: {icon} <b>{o['status']}</b>"
             )
         text = (
-            f"🧾 <b>RIWAYAT PESANAN KAMU</b>\n"
+            f"🧾 <b>YOUR ORDERS</b>\n"
             f"────────────────────\n\n"
             f"{chr(10).join(items)}\n\n"
             f"────────────────────"
@@ -450,8 +443,8 @@ def orders_page(user_id):
 
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🛍️ Belanja Lagi", callback_data="catalog")],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("🛍️ Shop Again", callback_data="catalog")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -460,30 +453,30 @@ def orders_page(user_id):
 def contact_page():
     admin = "uscosmoxyz"
     text = (
-        f"💬 <b>BUTUH BANTUAN?</b>\n"
+        f"💬 <b>NEED HELP?</b>\n"
         f"────────────────────\n\n"
-        f"Ada masalah dengan pesanan atau mau tanya-tanya?\n"
-        f"Admin kami siap bantu!\n\n"
-        f"👤 <b>Admin Official:</b> @{esc(admin)}\n\n"
-        f"<b>Shortcut Commands:</b>\n"
-        f"• <code>/start</code> — Menu Utama\n"
-        f"• <code>/products</code> — Katalog Produk\n"
-        f"• <code>/stock</code> — Cek Stok\n"
-        f"• <code>/orders</code> — Riwayat Pesanan\n"
-        f"• <code>/support</code> — Hubungi Admin\n\n"
+        f"Got an issue with your order or just wanna ask something?\n"
+        f"Our admin's got you covered.\n\n"
+        f"👤 <b>Official Admin:</b> @{esc(admin)}\n\n"
+        f"<b>Quick Commands:</b>\n"
+        f"• <code>/start</code> — Main Menu\n"
+        f"• <code>/products</code> — Product Catalog\n"
+        f"• <code>/stock</code> — Live Stock\n"
+        f"• <code>/orders</code> — Order History\n"
+        f"• <code>/support</code> — Contact Admin\n\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("💬 Chat Admin (@uscosmoxyz)", url=f"https://t.me/{admin}")],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
 
 
-def loading_text(msg="Lagi diproses..."):
-    return f"⏳ <b>{esc(msg)}</b>\n\n<i>Sebentar ya...</i>", InlineKeyboardMarkup([])
+def loading_text(msg="Processing your order..."):
+    return f"⏳ <b>{esc(msg)}</b>\n\n<i>Hang tight...</i>", InlineKeyboardMarkup([])
 
 
 def payment_method_page(order, usdt_amount=None, user_balance=0.0):
@@ -491,17 +484,17 @@ def payment_method_page(order, usdt_amount=None, user_balance=0.0):
     icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
     bal_str = fmt_price(user_balance)
     text = (
-        f"<b>Checkout Pesanan</b>\n\n"
-        f"Produk: {icon} <b>{esc(order['product_name'])}</b>\n"
-        f"Jumlah: {order['qty']}x\n"
+        f"<b>Checkout</b>\n\n"
+        f"Product: {icon} <b>{esc(order['product_name'])}</b>\n"
+        f"Quantity: {order['qty']}x\n"
         f"Total: <b>{fmt_price(order['total'])}</b> ({amt:.2f} USDT)\n"
-        f"Saldo: <b>{bal_str}</b>\n"
+        f"Balance: <b>{bal_str}</b>\n"
         f"Order ID: <code>{order['order_id']}</code>\n\n"
-        f"Pilih metode pembayaran:"
+        f"How do you want to pay?"
     )
     buttons = []
     if float(user_balance) >= float(order['total']):
-        pay_bal_btn = InlineKeyboardButton(f"⚡ Bayar Pakai Saldo ({bal_str})", callback_data=f"pay_balance:{order['order_id']}")
+        pay_bal_btn = InlineKeyboardButton(f"⚡ Pay with Balance ({bal_str})", callback_data=f"pay_balance:{order['order_id']}")
         try:
             setattr(pay_bal_btn, "style", "success")
             setattr(pay_bal_btn, "icon_custom_emoji_id", "5417924076503062111")
@@ -512,19 +505,19 @@ def payment_method_page(order, usdt_amount=None, user_balance=0.0):
     b1 = InlineKeyboardButton("Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}", api_kwargs={"style": "success"})
     b2 = InlineKeyboardButton("USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}", api_kwargs={"style": "success"})
     buttons.append([b1, b2])
-    buttons.append([InlineKeyboardButton("« Batal & Balik", callback_data="home")])
+    buttons.append([InlineKeyboardButton("« Cancel & Go Back", callback_data="home")])
     return text, InlineKeyboardMarkup(buttons)
 
 
 def topup_menu(user_balance=0.0):
     bal_str = fmt_price(user_balance)
     text = (
-        f"💳 <b>TOP UP SALDO</b>\n"
+        f"💳 <b>TOP UP BALANCE</b>\n"
         f"────────────────────\n\n"
-        f"💰 <b>Saldo kamu sekarang:</b> <b>{bal_str}</b>\n\n"
-        f"Top up sekali, belanja berkali-kali tanpa ribet transfer terus.\n\n"
+        f"💰 <b>Current Balance:</b> <b>{bal_str}</b>\n\n"
+        f"Top up once, buy anytime — no need to transfer every order.\n\n"
         f"────────────────────\n"
-        f"<i>Pilih nominal atau masukkan jumlah custom:</i>"
+        f"<i>Pick an amount or enter a custom one:</i>"
     )
     rows = [
         [
@@ -537,10 +530,10 @@ def topup_menu(user_balance=0.0):
             InlineKeyboardButton("+$100.00", callback_data="dep:100"),
         ],
         [
-            InlineKeyboardButton("✏️ Nominal Lain", callback_data="custom_dep"),
+            InlineKeyboardButton("✏️ Custom Amount", callback_data="custom_dep"),
         ],
         [
-            InlineKeyboardButton("« Balik ke Menu", callback_data="home"),
+            InlineKeyboardButton("« Back to Menu", callback_data="home"),
         ]
     ]
     return text, InlineKeyboardMarkup(rows)
@@ -551,18 +544,18 @@ def deposit_pay_page(deposit):
     pay_id = config.BINANCE_PAY_ID
     wallet = config.CRYPTO_WALLET_USDT
     text = (
-        f"💳 <b>PEMBAYARAN DEPOSIT • {fmt_price(amt)}</b>\n"
+        f"💳 <b>DEPOSIT • {fmt_price(amt)}</b>\n"
         f"────────────────────\n\n"
         f"🆔 <b>Deposit ID:</b> <code>{deposit['deposit_id']}</code>\n"
-        f"💰 <b>Jumlah:</b> <b>{amt:.2f} USDT</b> (kirim persis ya!)\n\n"
+        f"💰 <b>Amount Due:</b> <b>{amt:.2f} USDT</b> (exact amount only)\n\n"
         f"<b>1. Via Binance Pay:</b>\n"
         f"👉 Pay ID: <code>{pay_id}</code>\n\n"
         f"<b>2. Via USDT (BEP20 / BSC):</b>\n"
-        f"👉 Alamat: <code>{wallet}</code>\n\n"
+        f"👉 Address: <code>{wallet}</code>\n\n"
         f"────────────────────\n"
-        f"<i>Setelah transfer, tap tombol di bawah dan paste Transaction ID kamu:</i>"
+        f"<i>Done transferring? Tap below and paste your Transaction ID:</i>"
     )
-    btn = InlineKeyboardButton("✅ Sudah Transfer", callback_data=f"confirm_dep:{deposit['deposit_id']}")
+    btn = InlineKeyboardButton("✅ I've Transferred", callback_data=f"confirm_dep:{deposit['deposit_id']}")
     try:
         setattr(btn, "style", "success")
         setattr(btn, "icon_custom_emoji_id", "5411309092427834175")
@@ -570,7 +563,7 @@ def deposit_pay_page(deposit):
         pass
     rows = [
         [btn],
-        [InlineKeyboardButton("« Batalkan Deposit", callback_data="home")]
+        [InlineKeyboardButton("« Cancel Deposit", callback_data="home")]
     ]
     return text, InlineKeyboardMarkup(rows)
 
@@ -580,23 +573,23 @@ def binance_pay_page(order, usdt_amount=None):
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
     icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
     text = (
-        f"🟡 <b>PEMBAYARAN VIA BINANCE PAY</b>\n"
+        f"🟡 <b>BINANCE PAY</b>\n"
         f"────────────────────\n\n"
         f"{icon} <b>Item    :</b> {esc(order['product_name'])} x{order['qty']}\n"
-        f"💰 <b>Jumlah  :</b> <b>{amt:.2f} USDT</b> (kirim persis!)\n"
+        f"💰 <b>Amount  :</b> <b>{amt:.2f} USDT</b> (exact amount only)\n"
         f"🧾 <b>Order ID:</b> <code>{order['order_id']}</code>\n\n"
         f"────────────────────\n"
         f"📲 <b>Binance Pay ID:</b>\n"
         f"👉 <code>{pay_id}</code>\n\n"
-        f"<b>Cara Bayar:</b>\n"
-        f"1. Buka Binance Pay atau scan QR\n"
-        f"2. Kirim <b>{amt:.2f} USDT</b> ke Pay ID: <code>{pay_id}</code>\n"
-        f"3. Tap tombol di bawah, paste <b>Transaction ID</b> dari receipt.\n\n"
+        f"<b>How to Pay:</b>\n"
+        f"1. Open Binance Pay or scan the QR\n"
+        f"2. Send <b>{amt:.2f} USDT</b> to Pay ID: <code>{pay_id}</code>\n"
+        f"3. Tap below & paste your <b>Transaction ID</b> from the receipt\n\n"
         f"────────────────────\n"
-        f"<i>Selesai transfer? Tap tombol di bawah!</i>"
+        f"<i>Transfer done? Hit the button below!</i>"
     )
     pay_btn = InlineKeyboardButton(
-        "✅ Sudah Transfer",
+        "✅ I've Transferred",
         callback_data=f"confirm_pay:{order['order_id']}",
         api_kwargs={"icon_custom_emoji_id": "5411309092427834175", "style": "success"}
     )
@@ -610,8 +603,8 @@ def binance_pay_page(order, usdt_amount=None):
                 )
             ],
             [pay_btn],
-            [InlineKeyboardButton("🌐 Ganti ke USDT BEP20", callback_data=f"pay_usdt:{order['order_id']}")],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("🌐 Switch to USDT BEP20", callback_data=f"pay_usdt:{order['order_id']}")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -622,22 +615,22 @@ def crypto_usdt_page(order, usdt_amount=None):
     amt = float(usdt_amount if usdt_amount is not None else order['total'])
     icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
     text = (
-        f"🌐 <b>PEMBAYARAN USDT (BEP20 / BSC)</b>\n"
+        f"🌐 <b>USDT PAYMENT (BEP20 / BSC)</b>\n"
         f"────────────────────\n\n"
         f"{icon} <b>Item    :</b> {esc(order['product_name'])} x{order['qty']}\n"
-        f"💰 <b>Jumlah  :</b> <b>{amt:.2f} USDT</b> (persis ya!)\n"
+        f"💰 <b>Amount  :</b> <b>{amt:.2f} USDT</b> (exact amount only)\n"
         f"🧾 <b>Order ID:</b> <code>{order['order_id']}</code>\n\n"
         f"────────────────────\n"
-        f"📩 <b>Alamat Wallet:</b>\n"
+        f"📩 <b>Wallet Address:</b>\n"
         f"👉 <code>{wallet}</code>\n\n"
-        f"⚠️ <b>Penting!</b>\n"
+        f"⚠️ <b>Important:</b>\n"
         f"• Network: <b>BNB Smart Chain (BEP20)</b>\n"
-        f"• Jangan kirim via jaringan lain (ERC20/TRC20)\n\n"
+        f"• Do NOT send via other networks (ERC20/TRC20)\n\n"
         f"────────────────────\n"
-        f"<i>Selesai transfer? Tap tombol di bawah!</i>"
+        f"<i>Transfer done? Hit the button below!</i>"
     )
     pay_btn2 = InlineKeyboardButton(
-        "✅ Sudah Transfer",
+        "✅ I've Transferred",
         callback_data=f"confirm_pay:{order['order_id']}",
         api_kwargs={"icon_custom_emoji_id": "5411309092427834175", "style": "success"}
     )
@@ -646,13 +639,13 @@ def crypto_usdt_page(order, usdt_amount=None):
         [
             [
                 InlineKeyboardButton(
-                    "📋 Copy Alamat Wallet",
+                    "📋 Copy Wallet Address",
                     copy_text=CopyTextButton(text=wallet),
                 )
             ],
             [pay_btn2],
-            [InlineKeyboardButton("🟡 Ganti ke Binance Pay", callback_data=f"pay_binance:{order['order_id']}")],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("🟡 Switch to Binance Pay", callback_data=f"pay_binance:{order['order_id']}")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -670,7 +663,7 @@ def test_payment_page(order):
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("✅ Simulate Success", callback_data=f"paid:{order['order_id']}")],
-            [InlineKeyboardButton("« Return to Menu", callback_data="home")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -678,22 +671,22 @@ def test_payment_page(order):
 
 def pending_page(order):
     text = (
-        f"⏳ <b>MENUNGGU PEMBAYARAN</b>\n"
+        f"⏳ <b>AWAITING PAYMENT</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"🛍️ {esc(order['product_name'])} x{order['qty']}\n"
         f"💰 Total: <b>{fmt_price(order['total'])}</b>\n"
         f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"<i>Selesaikan pembayaran kamu, lalu cek statusnya.</i>"
+        f"<i>Complete your payment then check the status below.</i>"
     )
     keyboard = InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
-                    "🔄 Cek Status Pembayaran", callback_data=f"paid:{order['order_id']}"
+                    "🔄 Check Payment Status", callback_data=f"paid:{order['order_id']}"
                 )
             ],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -701,75 +694,75 @@ def pending_page(order):
 
 def awaiting_admin_page(order_id):
     text = (
-        f"⚡ <b>VERIFIKASI PEMBAYARAN SEDANG BERJALAN</b>\n"
+        f"⚡ <b>VERIFYING YOUR PAYMENT</b>\n"
         f"────────────────────\n\n"
         f"🧾 <b>Order ID:</b> <code>{esc(order_id)}</code>\n\n"
-        f"Detail transaksi kamu sudah kami terima dan sedang diverifikasi.\n\n"
-        f"🚀 <i>Begitu pembayaran terkonfirmasi, akun digital kamu langsung dikirim otomatis ke sini!</i>\n"
+        f"We've received your transaction details and are matching it with the payment network.\n\n"
+        f"🚀 <i>Once confirmed, your digital account will be delivered here automatically!</i>\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("« Balik ke Menu", callback_data="home")]]
+        [[InlineKeyboardButton("« Back to Menu", callback_data="home")]]
     )
     return text, keyboard
 
 
 def success_page(order_id):
     text = (
-        f"{EMOJI_VERIFIED} <b>PESANAN SELESAI!</b>\n"
+        f"{EMOJI_VERIFIED} <b>ORDER COMPLETE!</b>\n"
         f"────────────────────\n\n"
-        f"{EMOJI_CHECK} <b>Pembayaran Berhasil Dikonfirmasi</b>\n"
+        f"{EMOJI_CHECK} <b>Payment Confirmed</b>\n"
         f"🧾 <b>Order ID:</b> <code>{esc(order_id)}</code>\n\n"
-        f"📦 Akun digital kamu sudah dikirim di atas.\n"
-        f"Makasih udah belanja di <b>{BRAND}</b>! {EMOJI_HEART}\n\n"
+        f"📦 Your digital account has been delivered above.\n"
+        f"Thanks for shopping with <b>{BRAND}</b>! {EMOJI_HEART}\n\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("« Balik ke Menu", callback_data="home")]]
+        [[InlineKeyboardButton("« Back to Menu", callback_data="home")]]
     )
     return text, keyboard
 
 
 def no_stock_paid_page(order_id):
     text = (
-        f"⚠️ <b>STOK HABIS SAAT CHECKOUT</b>\n"
+        f"⚠️ <b>STOCK RAN OUT</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"✅ Pembayaran diterima: <code>{esc(order_id)}</code>\n\n"
-        f"Stok habis tepat saat kamu konfirmasi.\n"
-        f"Admin sudah kami notifikasi dan akan proses penggantian atau refund segera.\n\n"
+        f"✅ Payment received: <code>{esc(order_id)}</code>\n\n"
+        f"Stock ran out right as your order was confirmed.\n"
+        f"Admin has been notified and will arrange a replacement or refund ASAP.\n\n"
         f"━━━━━━━━━━━━━━━━━━━━"
     )
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("« Balik ke Menu", callback_data="home")]]
+        [[InlineKeyboardButton("« Back to Menu", callback_data="home")]]
     )
     return text, keyboard
 
 
-def error_page(message="Terjadi kesalahan, coba lagi nanti ya."):
+def error_page(message="Something went wrong — please try again."):
     text = (
-        f"⚠️ <b>OPS!</b>\n"
+        f"⚠️ <b>OOPS!</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"{esc(message)}\n\n"
         f"━━━━━━━━━━━━━━━━━━━━"
     )
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("« Balik ke Menu", callback_data="home")]]
+        [[InlineKeyboardButton("« Back to Menu", callback_data="home")]]
     )
     return text, keyboard
 
 
 def soldout_page():
     text = (
-        f"😔 <b>STOK HABIS</b>\n"
+        f"😔 <b>OUT OF STOCK</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"Produk ini lagi kosong nih.\n"
-        f"Cek lagi nanti atau lihat produk lain yang tersedia!\n\n"
+        f"This one's sold out right now.\n"
+        f"Check back later or browse what else we've got!\n\n"
         f"━━━━━━━━━━━━━━━━━━━━"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🛍️ Lihat Produk Lain", callback_data="catalog")],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("🛍️ See Other Products", callback_data="catalog")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -785,19 +778,19 @@ def admin_panel():
     text = (
         f"{EMOJI_VERIFIED} <b>{BRAND} ADMIN CONSOLE</b>\n"
         f"────────────────────\n\n"
-        f"📊 <b>Ringkasan Toko:</b>\n"
-        f"• Produk Aktif   : <b>{len(products)}</b>\n"
-        f"• Total Stok     : <b>{total_stock} item</b>\n"
-        f"• Total Order    : <b>{len(orders)}</b> ({pending} pending, {completed} selesai)\n\n"
+        f"📊 <b>Store Overview:</b>\n"
+        f"• Active Products : <b>{len(products)}</b>\n"
+        f"• Total Stock     : <b>{total_stock} items</b>\n"
+        f"• Total Orders    : <b>{len(orders)}</b> ({pending} pending, {completed} completed)\n\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("📦 Cek Stok", callback_data="stock"),
-                InlineKeyboardButton("🧾 Log Order", callback_data="ordersadmin"),
+                InlineKeyboardButton("📦 Live Stock", callback_data="stock"),
+                InlineKeyboardButton("🧾 Orders Log", callback_data="ordersadmin"),
             ],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
@@ -807,9 +800,9 @@ def admin_orders_page():
     rows = db.get_all_orders(limit=50)
     if not rows:
         text = (
-            f"🧾 <b>SEMUA TRANSAKSI</b>\n"
+            f"🧾 <b>ALL TRANSACTIONS</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Belum ada transaksi tercatat.\n\n"
+            f"No transactions recorded yet.\n\n"
             f"━━━━━━━━━━━━━━━━━━━━"
         )
     else:
@@ -828,7 +821,7 @@ def admin_orders_page():
                 f"  └ {esc(o['product_name'])} x{o['qty']} • {icon} {o['status']} (UID: <code>{o['telegram_id']}</code>)"
             )
         text = (
-            f"🧾 <b>SEMUA TRANSAKSI</b>\n"
+            f"🧾 <b>ALL TRANSACTIONS</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
             f"{chr(10).join(items)}\n\n"
             f"━━━━━━━━━━━━━━━━━━━━"
@@ -837,7 +830,7 @@ def admin_orders_page():
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("🔐 Admin Console", callback_data="admin")],
-            [InlineKeyboardButton("« Balik ke Menu", callback_data="home")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
     return text, keyboard
