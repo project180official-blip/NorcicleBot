@@ -81,7 +81,7 @@ function doPost(e) {
 }
 
 function doGet() {
-  return HtmlService.createHtmlOutput('Digitalin Store write-back OK');
+  return HtmlService.createHtmlOutput('Cosmo Shop write-back OK');
 }
 
 // Menandai baris stok menjadi SOLD dan mengisi kolom SOLD_TO.
@@ -258,9 +258,9 @@ function setupSheets() {
   if (!shSet) shSet = ss.insertSheet('SETTINGS');
   if (shSet.getLastRow() === 0) {
     shSet.appendRow(['KEY', 'VALUE']);
-shSet.appendRow(['STORE_NAME', 'Wooble Shop']);
-shSet.appendRow(['BOT_USERNAME', 'WoobleBot']);
-    shSet.appendRow(['ADMIN_USERNAME', 'Norcicle']);
+shSet.appendRow(['STORE_NAME', 'Cosmo Shop']);
+shSet.appendRow(['BOT_USERNAME', 'CosmoShoppBot']);
+    shSet.appendRow(['ADMIN_USERNAME', 'uscosmoxyz']);
     shSet.appendRow(['CURRENCY', 'USD']);
   }
 
