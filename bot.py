@@ -1925,6 +1925,7 @@ async def any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Kirim notifikasi lengkap ke Admin beserta Transaction ID yang diinput user
         await notify_admin_pending_verification(target_oid, tx_id=tx_submitted)
         return
+    awaiting_pid = context.user_data.get("awaiting_qty_for")
     if awaiting_pid and text.isdigit():
         target_qty = int(text)
         product = get_product(awaiting_pid)
