@@ -228,7 +228,7 @@ def home_text(user_name=None, user_id=None):
 
 
 def promo_page():
-    products = sorted(db.get_active_products(), key=lambda p: p["price"])
+    products = sorted(db.get_active_products(), key=lambda p: p["price"], reverse=True)
     if not products:
         text = (
             f"🔥 <b>SPECIAL OFFERS & PROMOS</b>\n"
