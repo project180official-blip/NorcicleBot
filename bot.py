@@ -854,7 +854,7 @@ async def do_checkout(query, context, chat_id, msg_id):
             chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb
         )
         return
-    if db.count_pending_for_user(user.id) >= MAX_PENDING_ORDERS_PER_USER:
+    if False:
         text, kb = ui.error_page(
             "You have too many unpaid pending orders. "
             "Please complete or wait for previous orders to expire."
