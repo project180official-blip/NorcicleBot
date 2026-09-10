@@ -81,7 +81,7 @@ function doPost(e) {
 }
 
 function doGet() {
-  return HtmlService.createHtmlOutput('Noir Supply write-back OK');
+  return HtmlService.createHtmlOutput('Norcicle write-back OK');
 }
 
 // Menandai baris stok menjadi SOLD dan mengisi kolom SOLD_TO.
@@ -258,9 +258,9 @@ function setupSheets() {
   if (!shSet) shSet = ss.insertSheet('SETTINGS');
   if (shSet.getLastRow() === 0) {
     shSet.appendRow(['KEY', 'VALUE']);
-shSet.appendRow(['STORE_NAME', 'Noir Supply']);
-shSet.appendRow(['BOT_USERNAME', 'NoirSupplyBot']);
-    shSet.appendRow(['ADMIN_USERNAME', 'Noirhere']);
+shSet.appendRow(['STORE_NAME', 'Norcicle']);
+shSet.appendRow(['BOT_USERNAME', 'NorcicleBot']);
+    shSet.appendRow(['ADMIN_USERNAME', 'norhereee']);
     shSet.appendRow(['CURRENCY', 'USD']);
   }
 

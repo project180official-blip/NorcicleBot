@@ -5,7 +5,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CopyTextButton
 import config
 import db
 
-BRAND = "Noir Supply"
+BRAND = "Norcicle"
 
 
 # Custom Animated Emoji IDs (Telegram Premium)
@@ -451,7 +451,7 @@ def orders_page(user_id):
 
 
 def contact_page():
-    admin = "Noirhere"
+    admin = "norhereee"
     text = (
         f"💬 <b>NEED HELP?</b>\n"
         f"────────────────────\n\n"
@@ -468,7 +468,7 @@ def contact_page():
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("💬 Chat Admin (@Noirhere)", url=f"https://t.me/{admin}")],
+            [InlineKeyboardButton("💬 Chat Admin (@norhereee)", url=f"https://t.me/{admin}")],
             [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
