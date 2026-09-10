@@ -186,7 +186,7 @@ def home_text(user_name=None, user_id=None):
     text = (
         f"✦ <b>{BRAND}</b> ✦\n\n"
         f"Hey, {user_greeting}! 👋\n"
-        f"Premium digital accounts — affordable prices, delivered instantly & automatically.\n\n"
+        f"Premium digital accounts, affordable prices, delivered instantly and automatically.\n\n"
         f"💳 Your balance: <b>{fmt_price(balance_val)}</b>\n\n"
         f"Pick something below:"
     )
@@ -244,7 +244,7 @@ def promo_page():
         f"────────────────────\n\n"
         f"{chr(10).join(items)}\n\n"
         f"────────────────────\n"
-        f"⚡ <i>Limited stock — don't sleep on it!</i>"
+        f"⚡ <i>Limited stock. Don't sleep on it!</i>"
     )
     keyboard = InlineKeyboardMarkup(
         [
@@ -414,7 +414,7 @@ def orders_page(user_id):
         text = (
             f"🧾 <b>ORDER HISTORY</b>\n"
             f"────────────────────\n\n"
-            f"No orders yet — go grab something! 🛍️\n\n"
+            f"No orders yet. Go grab something! 🛍️\n\n"
             f"────────────────────"
         )
     else:
@@ -459,11 +459,11 @@ def contact_page():
         f"Our admin's got you covered.\n\n"
         f"👤 <b>Official Admin:</b> @{esc(admin)}\n\n"
         f"<b>Quick Commands:</b>\n"
-        f"• <code>/start</code> — Main Menu\n"
-        f"• <code>/products</code> — Product Catalog\n"
-        f"• <code>/stock</code> — Live Stock\n"
-        f"• <code>/orders</code> — Order History\n"
-        f"• <code>/support</code> — Contact Admin\n\n"
+        f"• <code>/start</code> : Main Menu\n"
+        f"• <code>/products</code> : Product Catalog\n"
+        f"• <code>/stock</code> : Live Stock\n"
+        f"• <code>/orders</code> : Order History\n"
+        f"• <code>/support</code> : Contact Admin\n\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
@@ -515,7 +515,7 @@ def topup_menu(user_balance=0.0):
         f"💳 <b>TOP UP BALANCE</b>\n"
         f"────────────────────\n\n"
         f"💰 <b>Current Balance:</b> <b>{bal_str}</b>\n\n"
-        f"Top up once, buy anytime — no need to transfer every order.\n\n"
+        f"Top up once, buy anytime. No need to transfer every order.\n\n"
         f"────────────────────\n"
         f"<i>Pick an amount or enter a custom one:</i>"
     )
@@ -738,7 +738,7 @@ def no_stock_paid_page(order_id):
     return text, keyboard
 
 
-def error_page(message="Something went wrong — please try again."):
+def error_page(message="Something went wrong. Please try again."):
     text = (
         f"⚠️ <b>OOPS!</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
