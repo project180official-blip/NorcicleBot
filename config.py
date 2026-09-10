@@ -26,7 +26,7 @@ NEVAPEDIA_API_KEY = os.environ.get("NEVAPEDIA_API_KEY", "").strip()
 
 QRIS_IMAGE_URL = os.environ.get("QRIS_IMAGE_URL", "").strip()
 
-ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "urcosmoxyz").strip().lstrip("@")
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Noirhere").strip().lstrip("@")
 
 _admin_raw = os.environ.get("ADMIN_CHAT_ID", "").strip()
 try:

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cosmoshoppbot
+    name: noirsupply
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
