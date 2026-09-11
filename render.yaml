@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: vantashopp
+    name: neolumashop
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt

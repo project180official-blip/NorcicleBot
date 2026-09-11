@@ -1827,7 +1827,7 @@ async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             ]
         )
-    admin_user = "norhereee"
+    admin_user = "Lumajeasss"
     if admin_user:
         buttons.append(
             [InlineKeyboardButton("💬 Contact Support", url=f"https://t.me/{admin_user}")]
@@ -2032,7 +2032,7 @@ def main():
     app.job_queue.run_repeating(cleanup_reservations, interval=60, first=45)
     app.job_queue.run_repeating(keep_alive, interval=300, first=60)
 
-    logger.info("Bot Vantas Shopp berjalan (polling)...")
+    logger.info("Bot Neoluma Shop berjalan (polling)...")
     app.run_polling(drop_pending_updates=False)
 
 
