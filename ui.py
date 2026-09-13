@@ -31,7 +31,8 @@ EMOJI_GROK = '<tg-emoji emoji-id="5902340522852227618">😐</tg-emoji>'
 EMOJI_NOTION = '<tg-emoji emoji-id="5364199932620194408">📱</tg-emoji>'
 EMOJI_FIGMA = '<tg-emoji emoji-id="5411160533804014808">🟣</tg-emoji>'
 EMOJI_LEONARDO = '<tg-emoji emoji-id="5332348708556133142">👍</tg-emoji>'
-EMOJI_GAMMA = '<tg-emoji emoji-id="5357482075488283311">🎯</tg-emoji>'
+EMOJI_GAMMA = '<tg-emoji emoji-id="5848290240627740402">🎬</tg-emoji>'
+EMOJI_RUNWAY = '<tg-emoji emoji-id="5848290240627740402">🎬</tg-emoji>'
 EMOJI_DUOLINGO = '<tg-emoji emoji-id="6023922371168047961">🦜</tg-emoji>'
 EMOJI_DEFAULT_PROD = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
 
@@ -101,6 +102,8 @@ def get_product_icon(product):
         return EMOJI_LEONARDO
     if "gamma" in name:
         return EMOJI_GAMMA
+    if "runway" in name:
+        return EMOJI_RUNWAY
     if "duolingo" in name:
         return EMOJI_DUOLINGO
     if "claude" in name or pid == "P0006":
@@ -130,7 +133,9 @@ def get_product_emoji_id(product):
     if "leonardo" in name or pid == "P0012":
         return "5332348708556133142"
     if "gamma" in name:
-        return "5357482075488283311"
+        return "5848290240627740402"
+    if "runway" in name:
+        return "5848290240627740402"
     if "duolingo" in name:
         return "6023922371168047961"
     if "claude" in name or pid == "P0006":
@@ -160,7 +165,9 @@ def get_product_btn_icon(product):
     if "leonardo" in name or pid == "P0012":
         return "🖌️"
     if "gamma" in name:
-        return "🎯"
+        return "🎬"
+    if "runway" in name:
+        return "🎬"
     if "duolingo" in name:
         return "🦜"
     if "claude" in name or pid == "P0006":
