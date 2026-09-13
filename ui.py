@@ -223,7 +223,7 @@ def product_line(p):
 def home_text(user_name=None, user_id=None):
     products = db.get_active_products()
     balance_val = db.get_wallet(str(user_id)) if user_id else 0.0
-    user_greeting = f"<b>{esc(user_name)}</b>" if user_name else "there"
+    user_greeting = f"<b>{esc(user_name)}</b> <tg-emoji emoji-id=\"5343673029782156435\">👤</tg-emoji>" if user_name else "there"
 
     text = (
         f"<tg-emoji emoji-id=\"5364084406589863344\">⭐</tg-emoji> <b>{BRAND}</b> <tg-emoji emoji-id=\"5364084406589863344\">⭐</tg-emoji>\n\n"
