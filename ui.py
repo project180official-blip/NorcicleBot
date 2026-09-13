@@ -192,6 +192,7 @@ def home_text(user_name=None, user_id=None):
     )
 
     rows = []
+    btns = []
     for p in products:
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 Sold Out"
@@ -207,7 +208,12 @@ def home_text(user_name=None, user_id=None):
             callback_data=f"product:{p['id']}",
             api_kwargs={"icon_custom_emoji_id": emoji_id, "style": "success"}
         )
-        rows.append([btn])
+        btns.append(btn)
+        if len(btns) == 2:
+            rows.append(btns)
+            btns = []
+    if btns:
+        rows.append(btns)
 
     rows.append([
         InlineKeyboardButton("💳 Top Up", callback_data="topup"),
@@ -293,6 +299,7 @@ def catalog_text():
     )
 
     rows = []
+    btns = []
     for p in products:
         avail = db.count_available(p["id"])
         stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 Sold Out"
@@ -308,7 +315,12 @@ def catalog_text():
             callback_data=f"product:{p['id']}",
             api_kwargs={"icon_custom_emoji_id": emoji_id, "style": "success"}
         )
-        rows.append([btn])
+        btns.append(btn)
+        if len(btns) == 2:
+            rows.append(btns)
+            btns = []
+    if btns:
+        rows.append(btns)
 
     rows.append(
         [
