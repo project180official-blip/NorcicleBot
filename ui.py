@@ -227,7 +227,7 @@ def home_text(user_name=None, user_id=None):
 
     text = (
         f"<tg-emoji emoji-id=\"5364084406589863344\">⭐</tg-emoji> <b>{BRAND}</b> <tg-emoji emoji-id=\"5364084406589863344\">⭐</tg-emoji>\n\n"
-        f"What's good, {user_greeting}! 🔥\n"
+        f"What's good, {user_greeting}!\n"
         f"Top-tier digital accounts. Best prices. Delivered straight to your chat.\n\n"
         f"💳 Balance: <b>{fmt_price(balance_val)}</b>\n\n"
         f"Pick your product and let's get it:"
