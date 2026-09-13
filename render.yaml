@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: neolumashop
+    name: bloopyshop
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt

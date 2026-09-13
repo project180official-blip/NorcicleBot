@@ -81,7 +81,7 @@ function doPost(e) {
 }
 
 function doGet() {
-  return HtmlService.createHtmlOutput('Neoluma Shop write-back OK');
+  return HtmlService.createHtmlOutput('Bloopy Shop write-back OK');
 }
 
 // Menandai baris stok menjadi SOLD dan mengisi kolom SOLD_TO.
@@ -258,9 +258,9 @@ function setupSheets() {
   if (!shSet) shSet = ss.insertSheet('SETTINGS');
   if (shSet.getLastRow() === 0) {
     shSet.appendRow(['KEY', 'VALUE']);
-shSet.appendRow(['STORE_NAME', 'Neoluma Shop']);
-shSet.appendRow(['BOT_USERNAME', 'NeolumaShop_Bot']);
-    shSet.appendRow(['ADMIN_USERNAME', 'Lumajeasss']);
+shSet.appendRow(['STORE_NAME', 'Bloopy Shop']);
+shSet.appendRow(['BOT_USERNAME', 'BloopyClub_Bot']);
+    shSet.appendRow(['ADMIN_USERNAME', 'LoopyGirlx']);
     shSet.appendRow(['CURRENCY', 'USD']);
   }
 
