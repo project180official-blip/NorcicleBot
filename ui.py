@@ -54,16 +54,16 @@ def force_join_page():
     text = (
         f"{EMOJI_STAR} <b>{BRAND}</b> {EMOJI_VERIFIED}\n"
         f"────────────────────\n\n"
-        f"🔒 <b>Quick heads up!</b>\n\n"
-        f"Join our official channel first to get access to the store, stock updates, and exclusive drops:\n\n"
+        f"🔐 <b>Almost there!</b>\n\n"
+        f"Hit that Join button below to unlock the full store, exclusive drops, and real-time stock alerts.\n\n"
         f"👉 <b>{channel}</b>\n\n"
-        f"Already joined? Tap the button below.\n"
+        f"Already in? Tap the button and let's go!\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("📢 Join Channel", url=channel_link)],
-            [InlineKeyboardButton("✅ I've Joined!", callback_data="checkjoin")],
+            [InlineKeyboardButton("📢 Join Now", url=channel_link)],
+            [InlineKeyboardButton("✅ I'm In, Let's Go!", callback_data="checkjoin")],
         ]
     )
     return text, keyboard
@@ -184,11 +184,11 @@ def home_text(user_name=None, user_id=None):
     user_greeting = f"<b>{esc(user_name)}</b>" if user_name else "there"
 
     text = (
-        f"✦ <b>{BRAND}</b> ✦\n\n"
-        f"Hey, {user_greeting}! 👋\n"
-        f"Your go-to place for premium digital accounts at the best price, sent straight to you.\n\n"
+        f"⚡ <b>{BRAND}</b> ⚡\n\n"
+        f"What's good, {user_greeting}! 🔥\n"
+        f"Top-tier digital accounts. Best prices. Delivered straight to your chat.\n\n"
         f"💳 Balance: <b>{fmt_price(balance_val)}</b>\n\n"
-        f"What are you looking for today?"
+        f"Pick your product and let's get it:"
     )
 
     rows = []
@@ -235,8 +235,8 @@ def promo_page():
         text = (
             f"🔥 <b>DEALS & PROMOS</b>\n"
             f"────────────────────\n\n"
-            f"No active promos right now.\n"
-            f"Check back soon!\n\n"
+            f"No active promos at the moment.\n"
+            f"Stay locked in, something's coming!\n\n"
             f"────────────────────"
         )
         keyboard = InlineKeyboardMarkup(
@@ -246,11 +246,11 @@ def promo_page():
 
     items = [product_line(p) for p in products]
     text = (
-        f"🔥 <b>BEST DEALS FOR YOU</b>\n"
+        f"🔥 <b>HOT DEALS RIGHT NOW</b>\n"
         f"────────────────────\n\n"
         f"{chr(10).join(items)}\n\n"
         f"────────────────────\n"
-        f"⚡ <i>Limited stock. Don't sleep on it!</i>"
+        f"⚡ <i>Stock moves fast. Don't wait too long!</i>"
     )
     keyboard = InlineKeyboardMarkup(
         [
@@ -267,7 +267,8 @@ def catalog_text():
         text = (
             f"🛍️ <b>PRODUCT CATALOG</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Nothing in stock right now. Check back soon!\n\n"
+            f"We're restocking! Nothing available right now.\n"
+            f"Check back in a bit!\n\n"
             f"━━━━━━━━━━━━━━━━━━━━"
         )
         keyboard = InlineKeyboardMarkup(
@@ -295,7 +296,7 @@ def catalog_text():
         f"────────────────────\n\n"
         f"{chr(10).join(items_list)}\n\n"
         f"────────────────────\n"
-        f"<i>Tap a product to see details & order:</i>"
+        f"<i>Tap any product to order instantly:</i>"
     )
 
     rows = []
@@ -343,7 +344,7 @@ def product_page(product, qty):
     tier_block = ""
     if product.get("id") == "P0001" or "gemini" in pname:
         tier_block = (
-            f"\n💡 Bulk Pricing:\n"
+            f"\n🔥 Bulk Pricing:\n"
             f"• 1 pcs: $0.90\n"
             f"• 2–4 pcs: $0.80/ea\n"
             f"• 5–9 pcs: $0.70/ea\n"
@@ -360,7 +361,7 @@ def product_page(product, qty):
         f"{tier_block}\n"
         f"💰 Price: <b>{fmt_price(unit_price)}</b>\n"
         f"📦 Stock: {stock_badge}\n"
-        f"⚡ Delivery: Instant, straight to this chat\n\n"
+        f"⚡ Delivery: Instant, right here in this chat\n\n"
         f"🛒 Total: <b>{qty}x = {fmt_price(total)}</b>"
     )
 
@@ -374,7 +375,7 @@ def product_page(product, qty):
         ]
     else:
         buy_btn = InlineKeyboardButton(
-            f"⚡ Order Now • {fmt_price(total)}",
+            f"🔥 Order Now • {fmt_price(total)}",
             callback_data=f"buy:{product['id']}",
             api_kwargs={"icon_custom_emoji_id": "5222184635659747645", "style": "success"}
         )
@@ -400,16 +401,16 @@ def stock_page():
     products = db.get_active_products()
     items = []
     if not products:
-        items.append("No active products found.")
+        items.append("No products right now. Check back soon!")
     for p in products:
         items.append(product_line(p))
 
     text = (
-        f"📦 <b>LIVE STOCK</b> {EMOJI_VERIFIED}\n"
+        f"📦 <b>LIVE STOCK CHECK</b> {EMOJI_VERIFIED}\n"
         f"────────────────────\n\n"
         f"{chr(10).join(items)}\n\n"
         f"────────────────────\n"
-        f"{EMOJI_LIGHTNING} <i>Updated in real-time from our servers.</i>"
+        f"{EMOJI_LIGHTNING} <i>Stock synced live. What you see is what we got.</i>"
     )
     keyboard = InlineKeyboardMarkup(
         [
@@ -426,7 +427,7 @@ def orders_page(user_id):
         text = (
             f"🧾 <b>ORDER HISTORY</b>\n"
             f"────────────────────\n\n"
-            f"No orders yet. Go pick something you like! 🛍️\n\n"
+            f"No orders yet. Time to fix that! 🛍️\n\n"
             f"────────────────────"
         )
     else:
@@ -467,7 +468,7 @@ def contact_page():
     text = (
         f"💬 <b>NEED HELP?</b>\n"
         f"────────────────────\n\n"
-        f"Got a question or issue with your order? We're here.\n\n"
+        f"Got a question or ran into an issue? Hit us up, we got you.\n\n"
         f"👤 <b>Official Admin:</b> @{esc(admin)}\n\n"
         f"<b>Quick Commands:</b>\n"
         f"• <code>/start</code> : Main Menu\n"
@@ -487,7 +488,7 @@ def contact_page():
 
 
 def loading_text(msg="Processing your order..."):
-    return f"⏳ <b>{esc(msg)}</b>\n\n<i>Hang tight...</i>", InlineKeyboardMarkup([])
+    return f"⏳ <b>{esc(msg)}</b>\n\n<i>Give us a sec...</i>", InlineKeyboardMarkup([])
 
 
 def payment_method_page(order, usdt_amount=None, user_balance=0.0):
@@ -526,9 +527,9 @@ def topup_menu(user_balance=0.0):
         f"💳 <b>TOP UP BALANCE</b>\n"
         f"────────────────────\n\n"
         f"💰 <b>Current Balance:</b> <b>{bal_str}</b>\n\n"
-        f"Top up your balance once, then buy anytime without the hassle of transferring each time.\n\n"
+        f"Top up once, shop anytime. Skip the hassle of sending crypto every single order.\n\n"
         f"────────────────────\n"
-        f"<i>Pick an amount or enter a custom one:</i>"
+        f"<i>Pick an amount or type your own:</i>"
     )
     rows = [
         [
@@ -564,7 +565,7 @@ def deposit_pay_page(deposit):
         f"<b>2. Via USDT (BEP20 / BSC):</b>\n"
         f"👉 Address: <code>{wallet}</code>\n\n"
         f"────────────────────\n"
-        f"<i>Done transferring? Tap below and paste your Transaction ID:</i>"
+        f"<i>Done sending? Tap below and drop your Transaction ID:</i>"
     )
     btn = InlineKeyboardButton("✅ I've Transferred", callback_data=f"confirm_dep:{deposit['deposit_id']}")
     try:
@@ -593,11 +594,11 @@ def binance_pay_page(order, usdt_amount=None):
         f"📲 <b>Binance Pay ID:</b>\n"
         f"👉 <code>{pay_id}</code>\n\n"
         f"<b>How to Pay:</b>\n"
-        f"1. Open Binance Pay or scan the QR\n"
-        f"2. Send <b>{amt:.2f} USDT</b> to Pay ID: <code>{pay_id}</code>\n"
-        f"3. Tap below & paste your <b>Transaction ID</b> from the receipt\n\n"
+        f"1. Open Binance Pay or scan the QR above\n"
+        f"2. Send exactly <b>{amt:.2f} USDT</b> to Pay ID: <code>{pay_id}</code>\n"
+        f"3. Tap the button below and drop your <b>Transaction ID</b>\n\n"
         f"────────────────────\n"
-        f"<i>Transfer done? Hit the button below!</i>"
+        f"<i>Sent it? Hit the button and we'll sort the rest!</i>"
     )
     pay_btn = InlineKeyboardButton(
         "✅ I've Transferred",
@@ -635,10 +636,10 @@ def crypto_usdt_page(order, usdt_amount=None):
         f"📩 <b>Wallet Address:</b>\n"
         f"👉 <code>{wallet}</code>\n\n"
         f"⚠️ <b>Important:</b>\n"
-        f"• Network: <b>BNB Smart Chain (BEP20)</b>\n"
-        f"• Do NOT send via other networks (ERC20/TRC20)\n\n"
+        f"• Network: <b>BNB Smart Chain (BEP20) only</b>\n"
+        f"• Sending via ERC20/TRC20 will result in loss of funds\n\n"
         f"────────────────────\n"
-        f"<i>Transfer done? Hit the button below!</i>"
+        f"<i>Sent it? Hit the button and we'll sort the rest!</i>"
     )
     pay_btn2 = InlineKeyboardButton(
         "✅ I've Transferred",
@@ -688,7 +689,7 @@ def pending_page(order):
         f"💰 Total: <b>{fmt_price(order['total'])}</b>\n"
         f"🧾 Order ID: <code>{order['order_id']}</code>\n\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"<i>Complete your payment then check the status below.</i>"
+        f"<i>Complete your payment, then tap below to check your status.</i>"
     )
     keyboard = InlineKeyboardMarkup(
         [
@@ -708,8 +709,8 @@ def awaiting_admin_page(order_id):
         f"⚡ <b>VERIFYING YOUR PAYMENT</b>\n"
         f"────────────────────\n\n"
         f"🧾 <b>Order ID:</b> <code>{esc(order_id)}</code>\n\n"
-        f"We got your transaction details. Our team is verifying it now.\n\n"
-        f"🚀 <i>Your account will be sent here as soon as it's confirmed.</i>\n"
+        f"We got your proof. Verifying it right now.\n\n"
+        f"🚀 <i>Once it clears, your account lands here automatically. Stay tuned!</i>\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
@@ -720,12 +721,12 @@ def awaiting_admin_page(order_id):
 
 def success_page(order_id):
     text = (
-        f"{EMOJI_VERIFIED} <b>ORDER COMPLETE!</b>\n"
+        f"{EMOJI_VERIFIED} <b>YOU'RE ALL SET!</b>\n"
         f"────────────────────\n\n"
         f"{EMOJI_CHECK} <b>Payment Confirmed</b>\n"
         f"🧾 <b>Order ID:</b> <code>{esc(order_id)}</code>\n\n"
-        f"📦 Your account has been sent above. Check the message!\n"
-        f"Thanks for choosing <b>{BRAND}</b>. {EMOJI_HEART}\n\n"
+        f"📦 Your account is in the message above. Go get it!\n"
+        f"Thanks for rolling with <b>{BRAND}</b>. {EMOJI_HEART}\n\n"
         f"────────────────────"
     )
     keyboard = InlineKeyboardMarkup(
@@ -739,8 +740,8 @@ def no_stock_paid_page(order_id):
         f"⚠️ <b>STOCK RAN OUT</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"✅ Payment received: <code>{esc(order_id)}</code>\n\n"
-        f"Your payment went through but we ran out of stock at the same time.\n"
-        f"We've flagged this to the admin and will sort out a replacement or full refund shortly.\n\n"
+        f"Your payment went through but the stock ran dry at the exact same moment.\n"
+        f"Admin's been notified and we'll get you a replacement or full refund ASAP.\n\n"
         f"━━━━━━━━━━━━━━━━━━━━"
     )
     keyboard = InlineKeyboardMarkup(
@@ -751,7 +752,7 @@ def no_stock_paid_page(order_id):
 
 def error_page(message="Something went wrong. Please try again."):
     text = (
-        f"⚠️ <b>OOPS!</b>\n"
+        f"⚠️ <b>HOLD UP!</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"{esc(message)}\n\n"
         f"━━━━━━━━━━━━━━━━━━━━"
@@ -766,8 +767,7 @@ def soldout_page():
     text = (
         f"😔 <b>OUT OF STOCK</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"Hmm, this one's out of stock at the moment.\n"
-        f"Take a look at our other products while you're here!\n\n"
+        f"This one just ran out. But we've got more heat in the catalog!\n\n"
         f"━━━━━━━━━━━━━━━━━━━━"
     )
     keyboard = InlineKeyboardMarkup(
