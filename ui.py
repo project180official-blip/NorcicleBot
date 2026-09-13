@@ -33,6 +33,9 @@ EMOJI_FIGMA = '<tg-emoji emoji-id="5411160533804014808">🟣</tg-emoji>'
 EMOJI_LEONARDO = '<tg-emoji emoji-id="5332348708556133142">👍</tg-emoji>'
 EMOJI_GAMMA = '<tg-emoji emoji-id="5848290240627740402">🎬</tg-emoji>'
 EMOJI_RUNWAY = '<tg-emoji emoji-id="5848290240627740402">🎬</tg-emoji>'
+EMOJI_HIGGSFIELD = '<tg-emoji emoji-id="5848290240627740402">🎬</tg-emoji>'
+EMOJI_LOVABLE = '<tg-emoji emoji-id="5848290240627740402">🎬</tg-emoji>'
+EMOJI_PERPLEXITY = '<tg-emoji emoji-id="5848290240627740402">🎬</tg-emoji>'
 EMOJI_DUOLINGO = '<tg-emoji emoji-id="6023922371168047961">🦜</tg-emoji>'
 EMOJI_DEFAULT_PROD = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
 
@@ -104,6 +107,12 @@ def get_product_icon(product):
         return EMOJI_GAMMA
     if "runway" in name:
         return EMOJI_RUNWAY
+    if "higgsfield" in name:
+        return EMOJI_HIGGSFIELD
+    if "lovable" in name:
+        return EMOJI_LOVABLE
+    if "perplexity" in name:
+        return EMOJI_PERPLEXITY
     if "duolingo" in name:
         return EMOJI_DUOLINGO
     if "claude" in name or pid == "P0006":
@@ -136,6 +145,12 @@ def get_product_emoji_id(product):
         return "5848290240627740402"
     if "runway" in name:
         return "5848290240627740402"
+    if "higgsfield" in name:
+        return "5848290240627740402"
+    if "lovable" in name:
+        return "5848290240627740402"
+    if "perplexity" in name:
+        return "5848290240627740402"
     if "duolingo" in name:
         return "6023922371168047961"
     if "claude" in name or pid == "P0006":
@@ -167,6 +182,12 @@ def get_product_btn_icon(product):
     if "gamma" in name:
         return "🎬"
     if "runway" in name:
+        return "🎬"
+    if "higgsfield" in name:
+        return "🎬"
+    if "lovable" in name:
+        return "🎬"
+    if "perplexity" in name:
         return "🎬"
     if "duolingo" in name:
         return "🦜"
