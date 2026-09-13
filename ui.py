@@ -31,6 +31,8 @@ EMOJI_GROK = '<tg-emoji emoji-id="5902340522852227618">😐</tg-emoji>'
 EMOJI_NOTION = '<tg-emoji emoji-id="5364199932620194408">📱</tg-emoji>'
 EMOJI_FIGMA = '<tg-emoji emoji-id="5411160533804014808">🟣</tg-emoji>'
 EMOJI_LEONARDO = '<tg-emoji emoji-id="5332348708556133142">👍</tg-emoji>'
+EMOJI_GAMMA = '<tg-emoji emoji-id="5357482075488283311">🎯</tg-emoji>'
+EMOJI_DUOLINGO = '<tg-emoji emoji-id="6023922371168047961">🦜</tg-emoji>'
 EMOJI_DEFAULT_PROD = '<tg-emoji emoji-id="5472246178617765188">🎨</tg-emoji>'
 
 
@@ -97,6 +99,10 @@ def get_product_icon(product):
         return EMOJI_FIGMA
     if "leonardo" in name or pid == "P0012":
         return EMOJI_LEONARDO
+    if "gamma" in name:
+        return EMOJI_GAMMA
+    if "duolingo" in name:
+        return EMOJI_DUOLINGO
     if "claude" in name or pid == "P0006":
         return EMOJI_CLAUDE
     if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
@@ -123,6 +129,10 @@ def get_product_emoji_id(product):
         return "5411160533804014808"
     if "leonardo" in name or pid == "P0012":
         return "5332348708556133142"
+    if "gamma" in name:
+        return "5357482075488283311"
+    if "duolingo" in name:
+        return "6023922371168047961"
     if "claude" in name or pid == "P0006":
         return "5899837428797020489"
     if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
@@ -149,6 +159,10 @@ def get_product_btn_icon(product):
         return "🎨"
     if "leonardo" in name or pid == "P0012":
         return "🖌️"
+    if "gamma" in name:
+        return "🎯"
+    if "duolingo" in name:
+        return "🦜"
     if "claude" in name or pid == "P0006":
         return "🧠"
     if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
