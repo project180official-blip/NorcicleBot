@@ -228,7 +228,7 @@ def home_text(user_name=None, user_id=None):
     rows = []
     for p in products:
         avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail}" if avail > 0 else "🔴"
+        stock_badge = f"🟢 {avail} in stock" if avail > 0 else "🔴 Sold Out"
         emoji_id = get_product_emoji_id(p)
         price_tag = fmt_price(p['price'])
         btn = InlineKeyboardButton(
@@ -286,7 +286,7 @@ def catalog_text():
     items_list = []
     for i, p in enumerate(products, 1):
         avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail}" if avail > 0 else "🔴 Sold Out"
+    stock_badge = f"🟢 {avail} in stock" if avail > 0 else "🔴 Sold Out"
         icon = get_product_icon(p)
         price_tag = fmt_price(p['price'])
         items_list.append(f"{i}. {icon} <b>{esc(p['name'])}</b>  {price_tag}  {stock_badge}")
@@ -296,7 +296,7 @@ def catalog_text():
     rows = []
     for p in products:
         avail = db.count_available(p["id"])
-        stock_badge = f"🟢 {avail}" if avail > 0 else "🔴"
+        stock_badge = f"🟢 {avail} in stock" if avail > 0 else "🔴 Sold Out"
         emoji_id = get_product_emoji_id(p)
         price_tag = fmt_price(p['price'])
         btn = InlineKeyboardButton(
