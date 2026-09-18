@@ -1117,25 +1117,7 @@ async def paid_check(query, context, chat_id, msg_id):
         )
 
 
-NETFLIX_VPN_TERMS = (
-    "🟥 NETFLIX TUTORIAL: STREAMING WITH VPN\n\n"
-    "HOW TO USE:\n"
-    "1. Log in to the account as usual without connecting to VPN.\n"
-    "2. Once logged in successfully, choose the movie/show you wish to watch.\n"
-    "3. Turn on your VPN before clicking PLAY. "
-    "Feel free to connect to any VPN server/region.\n"
-    "4. Once video starts playing, you may turn off the VPN and continue watching. "
-    "Leaving VPN on is also fine.\n\n"
-    "If you cannot log in with the password, please use OTP login.\n\n"
-    "📩 OTP INBOX ACCESS:\n"
-    "https://mailku.online/mailbox\n\n"
-    "⚠️ TERMS OF PURCHASE\n"
-    "> Please understand the instructions before making a purchase.\n"
-    "> No refunds if account is wiped, banned, or encounters issues post-purchase.\n"
-    "> Ensure you have read and agreed to all conditions before buying.\n"
-    "> PURCHASING = AGREEING to all terms & conditions.\n\n"
-    "If you have questions regarding usage or login, feel free to contact support.\n\n"
-)
+NETFLIX_VPN_TERMS = ""
 
 GENERAL_TERMS = (
     "== TERMS & INSTRUCTIONS ==\n\n"
@@ -1145,31 +1127,84 @@ GENERAL_TERMS = (
     "> Warranty applies strictly according to terms specified for each product.\n\n"
 )
 
-GOOGLE_AI_PRO_TERMS = (
-    "📬 READ BEFORE ACTIVATION:\n"
-    "* Verify your destination email account before clicking 'Activate'.\n"
-    "* Do not activate on email accounts with an existing active Google Plus, Pro, or Ultra subscription.\n"
-    "* Ensure you are signed into the target account during activation. Check top-right corner to verify active user.\n\n"
-    "🛡️ TERMS & WARRANTY:\n"
-    "> ➡️ 6-hour replacement guarantee to ensure activation link functions properly.\n"
-    "> ➡️ Subscription activates instantly on your account upon completion.\n"
-    "> ➡️ Store warranty ends once activation is verified successful.\n"
-    "> ➡️ Guarantee applies strictly to the activation process.\n\n"
-    "🆘 IMPORTANT NOTICE:\n"
-    "> This plan is managed via Jio; subscription will terminate if the underlying SIM package expires. "
-    "Therefore, this item carries zero warranty post-activation. "
-    "However, as long as Jio SIM renewals are maintained, access remains active.\n\n"
-    "⚠️ Note:\n"
-    "> Redeem code is strictly single-use per account.\n"
+GOOGLE_AI_ULTRA_TERMS = (
+    "📬 GOOGLE AI ULTRA ACCESS:\n"
+    "1. Log in with provided credentials.\n"
+    "2. 25 Credits per month for 6 Months.\n"
+    "3. If OTP is required, check: https://mailku.online/mailbox\n\n"
+    "⚠️ TERMS:\n"
+    "> No refunds after activation.\n"
+    "> Warranty applies as specified.\n\n"
 )
 
-LEONARDO_AI_TERMS = (
-    "🎨 HOW TO LOGIN TO LEONARDO AI:\n"
-    "1. Visit leonardo.ai\n"
-    "2. Click 'Login with Canva'\n"
-    "3. Enter the purchased email credential\n"
-    "4. Proceed to OTP verification step\n"
-    "5. Retrieve your OTP code at: https://bototp.site\n"
+HIGGSFIELD_TERMS = (
+    "🎬 HIGGSFIELD MAX ACCESS:\n"
+    "1. Log in with provided credentials.\n"
+    "2. 5,400 Credits for 1 Month.\n"
+    "3. If OTP is required, check: https://mailku.online/mailbox\n\n"
+    "⚠️ TERMS:\n"
+    "> No refunds after activation.\n"
+    "> Warranty applies as specified.\n\n"
+)
+
+RUNWAY_TERMS = (
+    "🎬 RUNWAY PRO ACCESS:\n"
+    "1. Log in with provided credentials.\n"
+    "2. 12 Months access to Runway Pro.\n"
+    "3. If OTP is required, check: https://mailku.online/mailbox\n\n"
+    "⚠️ TERMS:\n"
+    "> No refunds after activation.\n"
+    "> Warranty applies as specified.\n\n"
+)
+
+NOTION_TERMS = (
+    "📝 NOTION AI BUSINESS ACCESS:\n"
+    "1. Check invitation link or login credentials provided above.\n"
+    "2. If an invite link is provided, accept it using your personal Notion workspace.\n"
+    "3. Full 12 Months access to Notion AI Business features enabled.\n\n"
+    "⚠️ TERMS:\n"
+    "> No refunds after activation.\n"
+    "> Warranty applies as specified.\n\n"
+)
+
+GROK_TERMS = (
+    "🧠 SUPERGROK HEAVY ACCESS:\n"
+    "1. Log in with provided credentials.\n"
+    "2. 1 Month access to SuperGrok Heavy.\n"
+    "3. If OTP is required, check: https://mailku.online/mailbox\n\n"
+    "⚠️ TERMS:\n"
+    "> No refunds after activation.\n"
+    "> Warranty applies as specified.\n\n"
+)
+
+CLAUDE_TERMS = (
+    "💬 CLAUDE MAX 20x ACCESS:\n"
+    "1. Check login details provided above (Email/Credentials).\n"
+    "2. If OTP is required, access OTP via: https://mailku.online/mailbox\n"
+    "3. Full warranty active as specified in product terms.\n\n"
+    "⚠️ TERMS:\n"
+    "> No refunds after activation.\n"
+    "> Warranty applies as specified.\n\n"
+)
+
+CHATGPT_TERMS = (
+    "⚡ CHATGPT PRO 20x ACCESS:\n"
+    "1. Log in with provided credentials above.\n"
+    "2. If email verification/OTP needed, check: https://mailku.online/mailbox\n"
+    "3. 6 Months access with Full Warranty.\n\n"
+    "⚠️ TERMS:\n"
+    "> No refunds after activation.\n"
+    "> Warranty applies as specified.\n\n"
+)
+
+HBO_TERMS = (
+    "📺 HBO MAX ACCESS:\n"
+    "1. Log in with provided credentials.\n"
+    "2. 12 Months access to HBO Max.\n"
+    "3. If OTP is required, check: https://mailku.online/mailbox\n\n"
+    "⚠️ TERMS:\n"
+    "> No refunds after activation.\n"
+    "> Warranty applies as specified.\n\n"
 )
 
 
@@ -1185,40 +1220,23 @@ async def send_product_file(context, order, contents):
     for i, content in enumerate(contents, 1):
         file_text += f"Item {i}:\n{content}\n\n"
     file_text += GENERAL_TERMS
-    if "google" in order["product_name"].lower() or "gemini" in order["product_name"].lower():
-        file_text += GOOGLE_AI_PRO_TERMS
-    if "netflix" in order["product_name"].lower() or "netflx" in order["product_name"].lower():
-        file_text += NETFLIX_VPN_TERMS
-    if "leonardo" in order["product_name"].lower():
-        file_text += LEONARDO_AI_TERMS
-    if "claude" in order["product_name"].lower():
-        file_text += (
-            "🧠 CLAUDE AI ACCESS GUIDE:\n"
-            "1. Check login details provided above (Email/Credentials).\n"
-            "2. If OTP is required, access OTP via: https://mailku.online/mailbox\n"
-            "3. Full warranty active as specified in product terms.\n"
-        )
-    if "chatgpt" in order["product_name"].lower() or "gpt" in order["product_name"].lower():
-        file_text += (
-            "🤖 CHATGPT PLUS ACCESS GUIDE:\n"
-            "1. Log in with provided credentials above.\n"
-            "2. If email verification/OTP needed, check: https://mailku.online/mailbox\n"
-            "3. Enjoy GPT Plus features and premium tools.\n"
-        )
-    if "notion" in order["product_name"].lower():
-        file_text += (
-            "📝 NOTION AI BUSINESS ACCESS GUIDE:\n"
-            "1. Check invitation link or login credentials provided above.\n"
-            "2. If an invite link is provided, accept it using your personal Notion workspace.\n"
-            "3. Full 12 Months access to Notion AI Business features enabled.\n"
-        )
-    if "figma" in order["product_name"].lower():
-        file_text += (
-            "🎨 FIGMA PRO EDU ACCESS GUIDE:\n"
-            "1. Log in with the account credentials provided above.\n"
-            "2. Access unlimited projects, files, and Pro features.\n"
-            "3. Full warranty active as specified in product terms.\n"
-        )
+    pname = order["product_name"].lower()
+    if "google" in pname or "gemini" in pname:
+        file_text += GOOGLE_AI_ULTRA_TERMS
+    if "higgsfield" in pname:
+        file_text += HIGGSFIELD_TERMS
+    if "runway" in pname:
+        file_text += RUNWAY_TERMS
+    if "notion" in pname:
+        file_text += NOTION_TERMS
+    if "grok" in pname:
+        file_text += GROK_TERMS
+    if "claude" in pname:
+        file_text += CLAUDE_TERMS
+    if "chatgpt" in pname or "gpt" in pname:
+        file_text += CHATGPT_TERMS
+    if "hbo" in pname:
+        file_text += HBO_TERMS
     file_text += "Thank you for purchasing!\n"
     buf = io.BytesIO(file_text.encode("utf-8"))
     buf.name = f"product-{order['order_id']}.txt"

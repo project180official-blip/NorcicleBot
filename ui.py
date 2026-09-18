@@ -73,135 +73,73 @@ def force_join_page():
 
 
 def calculate_item_price(product, qty):
-    pid = str(product.get("id", "")).upper()
-    pname = str(product.get("name", "")).lower()
     base_price = float(product.get("price", 0))
-
-    if pid == "P0001" or "gemini" in pname:
-        if qty >= 10:
-            unit_price = 0.5
-        elif qty >= 5:
-            unit_price = 0.7
-        elif qty >= 2:
-            unit_price = 0.8
-        else:
-            unit_price = 0.9
-        return unit_price, round(unit_price * qty, 2)
-
     return base_price, round(base_price * qty, 2)
 
 
 def get_product_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
-    if "notion" in name or pid == "P0010":
-        return EMOJI_NOTION
-    if "figma" in name or pid == "P0011":
-        return EMOJI_FIGMA
-    if "leonardo" in name or pid == "P0012":
-        return EMOJI_LEONARDO
-    if "gamma" in name:
-        return EMOJI_GAMMA
-    if "runway" in name:
-        return EMOJI_RUNWAY
-    if "higgsfield" in name:
+    if "google" in name or "gemini" in name or pid == "P0001":
+        return EMOJI_GEMINI
+    if "higgsfield" in name or pid == "P0002":
         return EMOJI_HIGGSFIELD
-    if "lovable" in name:
-        return EMOJI_LOVABLE
-    if "perplexity" in name:
-        return EMOJI_PERPLEXITY
-    if "duolingo" in name:
-        return EMOJI_DUOLINGO
+    if "runway" in name or pid == "P0003":
+        return EMOJI_RUNWAY
+    if "notion" in name or pid == "P0004":
+        return EMOJI_NOTION
+    if "grok" in name or pid == "P0005":
+        return EMOJI_GROK
     if "claude" in name or pid == "P0006":
         return EMOJI_CLAUDE
-    if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
+    if "chatgpt" in name or "gpt" in name or pid == "P0007":
         return EMOJI_CHATGPT
-    if "grok" in name or pid == "P0008":
-        return EMOJI_GROK
-    if "gemini" in name or pid == "P0001":
-        return EMOJI_GEMINI
-    if "hbo" in name or "max" in name:
+    if "hbo" in name or pid == "P0008":
         return EMOJI_HBO
-    if "capcut" in name or pid == "P0003":
-        return EMOJI_CAPCUT
-    if "netflix" in name or pid == "P0005":
-        return EMOJI_NETFLIX
     return EMOJI_DEFAULT_PROD
 
 
 def get_product_emoji_id(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
-    if "notion" in name or pid == "P0010":
+    if "google" in name or "gemini" in name or pid == "P0001":
+        return "5951817721468424817"
+    if "higgsfield" in name or pid == "P0002":
+        return "5848290240627740402"
+    if "runway" in name or pid == "P0003":
+        return "5848290240627740402"
+    if "notion" in name or pid == "P0004":
         return "5364199932620194408"
-    if "figma" in name or pid == "P0011":
-        return "5411160533804014808"
-    if "leonardo" in name or pid == "P0012":
-        return "5332348708556133142"
-    if "gamma" in name:
-        return "5848290240627740402"
-    if "runway" in name:
-        return "5848290240627740402"
-    if "higgsfield" in name:
-        return "5848290240627740402"
-    if "lovable" in name:
-        return "5848290240627740402"
-    if "perplexity" in name:
-        return "5848290240627740402"
-    if "duolingo" in name:
-        return "6023922371168047961"
+    if "grok" in name or pid == "P0005":
+        return "5902340522852227618"
     if "claude" in name or pid == "P0006":
         return "5899837428797020489"
-    if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
+    if "chatgpt" in name or "gpt" in name or pid == "P0007":
         return "5796185041717433060"
-    if "grok" in name or pid == "P0008":
-        return "5902340522852227618"
-    if "gemini" in name or pid == "P0001":
-        return "5951817721468424817"
-    if "hbo" in name or "max" in name:
+    if "hbo" in name or pid == "P0008":
         return "5298588152485651370"
-    if "capcut" in name or pid == "P0003":
-        return "5474521476197536994"
-    if "netflix" in name or pid == "P0005":
-        return "5355165443143252480"
     return "5472246178617765188"
 
 
 def get_product_btn_icon(product):
     name = str(product.get("name", "")).lower()
     pid = str(product.get("id", "")).upper()
-    if "notion" in name or pid == "P0010":
-        return "📝"
-    if "figma" in name or pid == "P0011":
-        return "🎨"
-    if "leonardo" in name or pid == "P0012":
-        return "🖌️"
-    if "gamma" in name:
-        return "🎬"
-    if "runway" in name:
-        return "🎬"
-    if "higgsfield" in name:
-        return "🎬"
-    if "lovable" in name:
-        return "🎬"
-    if "perplexity" in name:
-        return "🎬"
-    if "duolingo" in name:
-        return "🦜"
-    if "claude" in name or pid == "P0006":
-        return "🧠"
-    if "chatgpt" in name or "gpt" in name or pid in ("P0007", "P0009"):
+    if "google" in name or "gemini" in name or pid == "P0001":
         return "🤖"
-    if "grok" in name or pid == "P0008":
-        return "⚡"
-    if "gemini" in name or pid == "P0001":
-        return "✨"
-    if "hbo" in name or "max" in name:
+    if "higgsfield" in name or pid == "P0002":
         return "🎬"
-    if "capcut" in name or pid == "P0003":
-        return "✂️"
-    if "netflix" in name or pid == "P0005":
-        return "🍿"
+    if "runway" in name or pid == "P0003":
+        return "🎬"
+    if "notion" in name or pid == "P0004":
+        return "📝"
+    if "grok" in name or pid == "P0005":
+        return "🧠"
+    if "claude" in name or pid == "P0006":
+        return "💬"
+    if "chatgpt" in name or "gpt" in name or pid == "P0007":
+        return "⚡"
+    if "hbo" in name or pid == "P0008":
+        return "📺"
     return "💎"
 
 
