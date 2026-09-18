@@ -807,10 +807,6 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
         dep_id = data.split(":", 1)[1]
         await admin_reject_deposit(query, context, chat_id, msg_id, dep_id)
 
-    elif data.startswith("pay_binance:"):
-        order_id = data.split(":", 1)[1]
-        await process_binance_payment(query, context, chat_id, msg_id, order_id)
-
     elif data.startswith("pay_usdt:"):
         order_id = data.split(":", 1)[1]
         await process_usdt_payment(query, context, chat_id, msg_id, order_id)
@@ -974,37 +970,6 @@ async def process_balance_payment(query, context, chat_id, msg_id, order_id):
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
 
 
-async def process_binance_payment(query, context, chat_id, msg_id, order_id):
-    order = db.get_order(order_id)
-    if not order or str(order["telegram_id"]) != str(query.from_user.id):
-        await query.answer("Order not found.")
-        return
-
-    total = order["total"]
-    usdt_amount = float(total)
-
-    try:
-        text, kb = ui.binance_pay_page(order, usdt_amount)
-        if config.BINANCE_QR_URL:
-            try:
-                await app.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            except Exception:
-                pass
-            await app.bot.send_photo(
-                chat_id=chat_id,
-                photo=config.BINANCE_QR_URL,
-                caption=text,
-                parse_mode="HTML",
-                reply_markup=kb,
-            )
-        else:
-            await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
-    except Exception as e:
-        logger.error("Binance payment error: %s", e)
-        text, kb = ui.error_page("Failed to display Binance Pay page.")
-        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
-
-
 async def process_usdt_payment(query, context, chat_id, msg_id, order_id):
     order = db.get_order(order_id)
     if not order or str(order["telegram_id"]) != str(query.from_user.id):
@@ -1024,10 +989,23 @@ async def process_usdt_payment(query, context, chat_id, msg_id, order_id):
 
     try:
         text, kb = ui.crypto_usdt_page(order, usdt_amount)
-        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+        if config.QR_URL_USDT:
+            try:
+                await app.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            except Exception:
+                pass
+            await app.bot.send_photo(
+                chat_id=chat_id,
+                photo=config.QR_URL_USDT,
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=kb,
+            )
+        else:
+            await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
     except Exception as e:
-        logger.error("Crypto payment error: %s", e)
-        text, kb = ui.error_page("Failed to display crypto payment page.")
+        logger.error("USDT payment error: %s", e)
+        text, kb = ui.error_page("Failed to display USDT payment page.")
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
 
 
@@ -1050,7 +1028,20 @@ async def process_usdc_sol_payment(query, context, chat_id, msg_id, order_id):
 
     try:
         text, kb = ui.crypto_usdc_sol_page(order, usdc_amount)
-        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+        if config.QR_URL_USDC_SOL:
+            try:
+                await app.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            except Exception:
+                pass
+            await app.bot.send_photo(
+                chat_id=chat_id,
+                photo=config.QR_URL_USDC_SOL,
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=kb,
+            )
+        else:
+            await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
     except Exception as e:
         logger.error("USDC Solana payment error: %s", e)
         text, kb = ui.error_page("Failed to display USDC Solana payment page.")
