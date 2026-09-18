@@ -1827,7 +1827,7 @@ async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             ]
         )
-    admin_user = "dropvin"
+    admin_user = "nolejass"
     if admin_user:
         buttons.append(
             [InlineKeyboardButton("💬 Contact Support", url=f"https://t.me/{admin_user}")]

@@ -73,6 +73,10 @@ function doPost(e) {
       fixSheetsStructure();
       return HtmlService.createHtmlOutput('OK_FIXED');
     }
+    if (body.update_settings && typeof body.update_settings === 'object') {
+      updateSettings(body.update_settings);
+      return HtmlService.createHtmlOutput('OK_SETTINGS');
+    }
     return HtmlService.createHtmlOutput('INVALID');
   } catch (err) {
     console.error(err);
@@ -259,8 +263,8 @@ function setupSheets() {
   if (shSet.getLastRow() === 0) {
     shSet.appendRow(['KEY', 'VALUE']);
     shSet.appendRow(['STORE_NAME', 'DROP LAB']);
-shSet.appendRow(['BOT_USERNAME', 'DropLabBot']);
-    shSet.appendRow(['ADMIN_USERNAME', 'dropvin']);
+    shSet.appendRow(['BOT_USERNAME', 'NoleShop_Bot']);
+    shSet.appendRow(['ADMIN_USERNAME', 'nolejass']);
     shSet.appendRow(['CURRENCY', 'USD']);
   }
 
@@ -286,4 +290,25 @@ shSet.appendRow(['BOT_USERNAME', 'DropLabBot']);
 function initProps() {
   SpreadsheetApp.openById(getSpreadsheetId());
   return 'OK';
+}
+
+function updateSettings(settings) {
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
+  let sh = ss.getSheetByName('SETTINGS');
+  if (!sh) {
+    sh = ss.insertSheet('SETTINGS');
+    sh.appendRow(['KEY', 'VALUE']);
+  }
+  const data = sh.getDataRange().getValues();
+  const index = {};
+  for (let i = 1; i < data.length; i++) {
+    index[String(data[i][0]).trim()] = i + 1;
+  }
+  for (const [key, value] of Object.entries(settings)) {
+    if (index[key]) {
+      sh.getRange(index[key], 2).setValue(String(value));
+    } else {
+      sh.appendRow([key, String(value)]);
+    }
+  }
 }
