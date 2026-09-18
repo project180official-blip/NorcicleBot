@@ -78,10 +78,16 @@ def calculate_item_price(product, qty):
 
 
 def get_product_icon(product):
+    avail = db.count_available(product.get("id", ""))
+    if avail < 1:
+        return '<tg-emoji emoji-id="5377731669467884550">🚫</tg-emoji>'
     return EMOJI_DEFAULT_PROD
 
 
 def get_product_emoji_id(product):
+    avail = db.count_available(product.get("id", ""))
+    if avail < 1:
+        return "5377731669467884550"
     return "5780427176075602519"
 
 
