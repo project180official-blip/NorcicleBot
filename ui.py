@@ -216,13 +216,13 @@ def product_line(p):
 def home_text(user_name=None, user_id=None):
     products = db.get_active_products()
     balance_val = db.get_wallet(str(user_id)) if user_id else 0.0
-    user_greeting = f"<b>{esc(user_name)}</b> <tg-emoji emoji-id=\"5343673029782156435\">👤</tg-emoji>" if user_name else "there"
+    user_greeting = f"<b>{esc(user_name)}</b>" if user_name else "there"
 
     text = (
-        f"<b>NOLE SHOP</b> — your go-to digital store.\n\n"
-        f"What's up, {user_greeting}! Ready to cop something? 🔥\n\n"
-        f"💳 Balance: <b>{fmt_price(balance_val)}</b>\n\n"
-        f"Pick your product below and let's get it done:"
+        f"<b>NOLE SHOP</b>\n"
+        f"<i>Your go-to digital store.</i>\n\n"
+        f"Hey {user_greeting}, what are you copping today?\n\n"
+        f"Balance: <b>{fmt_price(balance_val)}</b>"
     )
 
     rows = []
