@@ -815,6 +815,10 @@ async def _handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, q
         order_id = data.split(":", 1)[1]
         await process_usdt_payment(query, context, chat_id, msg_id, order_id)
 
+    elif data.startswith("pay_usdc_sol:"):
+        order_id = data.split(":", 1)[1]
+        await process_usdc_sol_payment(query, context, chat_id, msg_id, order_id)
+
     elif data == "noop":
         pass
 
@@ -1024,6 +1028,32 @@ async def process_usdt_payment(query, context, chat_id, msg_id, order_id):
     except Exception as e:
         logger.error("Crypto payment error: %s", e)
         text, kb = ui.error_page("Failed to display crypto payment page.")
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+
+
+async def process_usdc_sol_payment(query, context, chat_id, msg_id, order_id):
+    order = db.get_order(order_id)
+    if not order or str(order["telegram_id"]) != str(query.from_user.id):
+        await query.answer("Order not found.")
+        return
+
+    product_id = order["product_id"]
+    qty = order["qty"]
+    total = order["total"]
+
+    if not config.CRYPTO_WALLET_USDC_SOL:
+        text, kb = ui.error_page("USDC Solana payment is not configured.")
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+        return
+
+    usdc_amount = float(total)
+
+    try:
+        text, kb = ui.crypto_usdc_sol_page(order, usdc_amount)
+        await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
+    except Exception as e:
+        logger.error("USDC Solana payment error: %s", e)
+        text, kb = ui.error_page("Failed to display USDC Solana payment page.")
         await safe_edit(chat_id=chat_id, message_id=msg_id, text=text, reply_markup=kb)
 
 

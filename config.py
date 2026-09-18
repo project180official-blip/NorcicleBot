@@ -19,6 +19,7 @@ BINANCE_QR_URL = os.environ.get("BINANCE_QR_URL", "https://i.ibb.co.com/Lh9133Lg
 BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "").strip()
 BINANCE_API_SECRET = os.environ.get("BINANCE_API_SECRET", "").strip()
 CRYPTO_WALLET_USDT = os.environ.get("CRYPTO_WALLET_USDT", "0x5a3f4b292bd4269b82191ffae4dd14f1d0a75756").strip()
+CRYPTO_WALLET_USDC_SOL = os.environ.get("CRYPTO_WALLET_USDC_SOL", "").strip()
 
 AFFILIATE_PERCENT = int(os.environ.get("AFFILIATE_PERCENT", "5") or 0)
 

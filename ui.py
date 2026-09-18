@@ -465,6 +465,9 @@ def payment_method_page(order, usdt_amount=None, user_balance=0.0):
     b1 = InlineKeyboardButton("Binance Pay (Pay ID)", callback_data=f"pay_binance:{order['order_id']}", api_kwargs={"style": "success"})
     b2 = InlineKeyboardButton("USDT (BEP20 / BSC)", callback_data=f"pay_usdt:{order['order_id']}", api_kwargs={"style": "success"})
     buttons.append([b1, b2])
+    if config.CRYPTO_WALLET_USDC_SOL:
+        b3 = InlineKeyboardButton("USDC (Solana)", callback_data=f"pay_usdc_sol:{order['order_id']}", api_kwargs={"style": "success"})
+        buttons.append([b3])
     buttons.append([InlineKeyboardButton("« Cancel & Go Back", callback_data="home")])
     return text, InlineKeyboardMarkup(buttons)
 
@@ -500,6 +503,7 @@ def deposit_pay_page(deposit):
     amt = float(deposit['amount'])
     pay_id = config.BINANCE_PAY_ID
     wallet = config.CRYPTO_WALLET_USDT
+    wallet_usdc = config.CRYPTO_WALLET_USDC_SOL
     text = (
         f"💳 <b>DEPOSIT  {fmt_price(amt)}</b>\n\n"
         f"ID: <code>{deposit['deposit_id']}</code>\n"
@@ -507,9 +511,11 @@ def deposit_pay_page(deposit):
         f"<b>Binance Pay:</b>\n"
         f"<code>{pay_id}</code>\n\n"
         f"<b>USDT BEP20:</b>\n"
-        f"<code>{wallet}</code>\n\n"
-        f"<i>Done? Tap below and send your Transaction ID.</i>"
+        f"<code>{wallet}</code>\n"
     )
+    if wallet_usdc:
+        text += f"\n<b>USDC Solana:</b>\n<code>{wallet_usdc}</code>\n"
+    text += f"\n<i>Done? Tap below and send your Transaction ID.</i>"
     btn = InlineKeyboardButton("✅ I've Transferred", callback_data=f"confirm_dep:{deposit['deposit_id']}")
     try:
         setattr(btn, "style", "success")
@@ -552,6 +558,7 @@ def binance_pay_page(order, usdt_amount=None):
             ],
             [pay_btn],
             [InlineKeyboardButton("🌐 Switch to USDT BEP20", callback_data=f"pay_usdt:{order['order_id']}")],
+            [InlineKeyboardButton("💜 Switch to USDC Solana", callback_data=f"pay_usdc_sol:{order['order_id']}")],
             [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
@@ -588,6 +595,44 @@ def crypto_usdt_page(order, usdt_amount=None):
             ],
             [pay_btn2],
             [InlineKeyboardButton("🟡 Switch to Binance Pay", callback_data=f"pay_binance:{order['order_id']}")],
+            [InlineKeyboardButton("💜 Switch to USDC Solana", callback_data=f"pay_usdc_sol:{order['order_id']}")],
+            [InlineKeyboardButton("« Back to Menu", callback_data="home")],
+        ]
+    )
+    return text, keyboard
+
+
+def crypto_usdc_sol_page(order, usdc_amount=None):
+    wallet = config.CRYPTO_WALLET_USDC_SOL
+    amt = float(usdc_amount if usdc_amount is not None else order['total'])
+    icon = get_product_icon({"name": order['product_name'], "id": order.get('product_id', '')})
+    text = (
+        f"🌐 <b>USDC SOLANA</b>\n\n"
+        f"{icon} <b>{esc(order['product_name'])}</b> x{order['qty']}\n"
+        f"Amount: <b>{amt:.2f} USDC</b>\n"
+        f"Order: <code>{order['order_id']}</code>\n\n"
+        f"<b>Wallet:</b>\n"
+        f"<code>{wallet}</code>\n\n"
+        f"⚠️ Solana network only\n\n"
+        f"<i>Sent? Tap below.</i>"
+    )
+    pay_btn = InlineKeyboardButton(
+        "✅ I've Transferred",
+        callback_data=f"confirm_pay:{order['order_id']}",
+        api_kwargs={"icon_custom_emoji_id": "5411309092427834175", "style": "success"}
+    )
+
+    keyboard = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "📋 Copy Wallet Address",
+                    copy_text=CopyTextButton(text=wallet),
+                )
+            ],
+            [pay_btn],
+            [InlineKeyboardButton("🟡 Switch to Binance Pay", callback_data=f"pay_binance:{order['order_id']}")],
+            [InlineKeyboardButton("🟢 Switch to USDT BEP20", callback_data=f"pay_usdt:{order['order_id']}")],
             [InlineKeyboardButton("« Back to Menu", callback_data="home")],
         ]
     )
